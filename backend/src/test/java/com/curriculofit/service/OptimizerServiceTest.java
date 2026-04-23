@@ -64,7 +64,35 @@ class OptimizerServiceTest {
                     "gaps_criticos": ["Baixa evidência de cloud pública", "Pouca profundidade em observabilidade", "Ausência de experiência explícita com containers em produção"],
                     "keywords_presentes": ["Java", "Spring Boot", "API REST", "Git", "Backend", "Banco de dados"],
                     "keywords_ausentes": ["Docker", "Kubernetes", "AWS", "CI/CD", "Mensageria", "Observabilidade"],
-                    "recomendacoes": ["Adicionar bullet de projeto com deploy automatizado", "Evidenciar métricas de performance entregues", "Incluir experiência com Docker em projeto real", "Descrever integração contínua usada no time", "Destacar responsabilidades de arquitetura em APIs"]
+                    "recomendacoes": ["Adicionar bullet de projeto com deploy automatizado", "Evidenciar métricas de performance entregues", "Incluir experiência com Docker em projeto real", "Descrever integração contínua usada no time", "Destacar responsabilidades de arquitetura em APIs"],
+                    "diagnostico_estrutural": {
+                      "estrutura_atual_adequada": false,
+                      "motivo_estrutural": "As primeiras seções não destacam os requisitos críticos da vaga backend e cloud.",
+                      "secoes_a_reordenar": ["Resumo", "Experiência", "Competências"],
+                      "secoes_a_comprimir": ["Objetivo genérico"],
+                      "secoes_a_expandir": ["Projetos", "Resultados"],
+                      "novo_outline_sugerido": ["Resumo", "Competencias-Chave", "Experiencias Relevantes", "Projetos", "Formacao"]
+                    },
+                    "cobertura_requisitos": [
+                      {
+                        "requisito": "Java e Spring Boot",
+                        "status": "atende_total",
+                        "evidencia_curriculo": "Desenvolveu APIs com Java e Spring Boot",
+                        "confianca": "alta"
+                      },
+                      {
+                        "requisito": "Cloud",
+                        "status": "nao_atende",
+                        "evidencia_curriculo": "Sem menção explícita de AWS/Azure/GCP",
+                        "confianca": "media"
+                      }
+                    ],
+                    "subscores": {
+                      "aderencia_tecnica": 31,
+                      "aderencia_responsabilidades": 20,
+                      "aderencia_dominio": 15,
+                      "clareza_comunicacao": 12
+                    }
                   }
                 }
                 """;
@@ -92,5 +120,42 @@ class OptimizerServiceTest {
       IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> optimizerService.optimize(cvFile, "vaga"));
 
       assertTrue(ex.getMessage().contains("formato inválido"));
+    }
+
+    @Test
+    void deveEnriquecerAnaliseQuandoModeloRetornarSchemaAntigo() {
+        MockMultipartFile cvFile = new MockMultipartFile("cvFile", "cv.md", "text/markdown", "cv".getBytes());
+
+        String legacyJson = """
+                {
+                  "cv_otimizado": "# CV Otimizado\\n\\n## Resumo\\nPerfil com experiência em backend Java.",
+                  "analise": {
+                    "score_compatibilidade": 76,
+                    "resumo": "Boa aderência técnica geral para backend Java, mas ainda com lacunas em cloud e práticas de entrega contínua.",
+                    "pontos_fortes": ["Java", "Spring Boot"],
+                    "gaps_criticos": ["Cloud"],
+                    "keywords_presentes": ["Java", "Spring Boot", "API REST"],
+                    "keywords_ausentes": ["AWS", "Docker"],
+                    "recomendacoes": ["Adicionar experiência com cloud", "Detalhar métricas de impacto"]
+                  }
+                }
+                """;
+
+        when(cvParserService.extract(cvFile)).thenReturn("Currículo base");
+        when(jobFetcherService.fetch("vaga")).thenReturn("Vaga backend Java");
+        when(chatClient.prompt().user("CURRÍCULO ORIGINAL:\nCurrículo base\nDESCRIÇÃO DA VAGA:\nVaga backend Java").call().content())
+                .thenReturn(legacyJson);
+
+        OptimizeResponse response = optimizerService.optimize(cvFile, "vaga");
+
+        assertNotNull(response);
+        assertNotNull(response.analise().diagnosticoEstrutural());
+        assertNotNull(response.analise().subscores());
+        assertNotNull(response.analise().coberturaRequisitos());
+        assertTrue(!response.analise().coberturaRequisitos().isEmpty());
+        assertTrue(response.analise().subscores().aderenciaTecnica() >= 0);
+        assertTrue(response.analise().subscores().aderenciaResponsabilidades() >= 0);
+        assertTrue(response.analise().subscores().aderenciaDominio() >= 0);
+        assertTrue(response.analise().subscores().clarezaComunicacao() >= 0);
     }
 }

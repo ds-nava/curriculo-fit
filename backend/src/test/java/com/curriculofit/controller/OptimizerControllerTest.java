@@ -44,7 +44,24 @@ class OptimizerControllerTest {
                         List.of("Cloud"),
                         List.of("Spring"),
                         List.of("Docker"),
-                        List.of("Criar projeto com Docker")
+                        List.of("Criar projeto com Docker"),
+                        new FitAnalysis.DiagnosticoEstrutural(
+                                false,
+                                "Estrutura inicial não prioriza os requisitos críticos da vaga.",
+                                List.of("Resumo", "Competências", "Experiências"),
+                                List.of("Objetivo genérico"),
+                                List.of("Projetos"),
+                                List.of("Resumo", "Competencias-Chave", "Experiencias Relevantes", "Projetos", "Formacao")
+                        ),
+                        List.of(
+                                new FitAnalysis.CoberturaRequisito(
+                                        "Java",
+                                        "atende_total",
+                                        "Experiência declarada com Java.",
+                                        "alta"
+                                )
+                        ),
+                        new FitAnalysis.Subscores(30, 20, 13, 12)
                 )
         );
 
@@ -64,5 +81,46 @@ class OptimizerControllerTest {
         mockMvc.perform(multipart("/api/optimize")
                         .param("jobSource", "Descrição de vaga backend Java com Spring Boot"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deveRetornar429QuandoGroqAtingeLimiteDeTokens() throws Exception {
+        MockMultipartFile cvFile = new MockMultipartFile(
+                "cvFile",
+                "cv.md",
+                "text/markdown",
+                "# CV".getBytes()
+        );
+
+        String mensagem = "O Groq recusou a requisição por limite de tokens do plano atual. Tente novamente em instantes ou envie um CV/vaga menor.";
+
+        when(optimizerService.optimize(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString()))
+                .thenThrow(new IllegalArgumentException(mensagem));
+
+        mockMvc.perform(multipart("/api/optimize")
+                        .file(cvFile)
+                        .param("jobSource", "Descrição de vaga backend Java com Spring Boot"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.status").value(429))
+                .andExpect(jsonPath("$.message").value(mensagem));
+    }
+
+    @Test
+    void deveRetornar429QuandoGroqEstiverEmRateLimit() throws Exception {
+        MockMultipartFile cvFile = new MockMultipartFile(
+                "cvFile",
+                "cv.md",
+                "text/markdown",
+                "# CV".getBytes()
+        );
+
+        when(optimizerService.optimize(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString()))
+                .thenThrow(new IllegalArgumentException("O Groq recusou a requisição por limite de tokens do plano atual. Tente novamente em instantes ou envie um CV/vaga menor."));
+
+        mockMvc.perform(multipart("/api/optimize")
+                        .file(cvFile)
+                        .param("jobSource", "Descrição de vaga backend Java com Spring Boot"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.status").value(429));
     }
 }

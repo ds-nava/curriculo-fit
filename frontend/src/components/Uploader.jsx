@@ -11,6 +11,7 @@ export default function Uploader({ loading, onSubmit, error }) {
   const [cvFile, setCvFile] = useState(null);
   const [localError, setLocalError] = useState('');
   const inputRef = useRef(null);
+  const sourceLength = jobSource.trim().length;
 
   function onFileSelected(file) {
     if (!file) return;
@@ -52,8 +53,10 @@ export default function Uploader({ loading, onSubmit, error }) {
 
   return (
     <form className="panel uploader fade-in" onSubmit={handleSubmit}>
-      <h1>CurriculoFit</h1>
-      <p>Otimize seu currículo para uma vaga específica sem inventar experiência.</p>
+      <div className="uploader-head">
+        <h2>Entrada de Dados</h2>
+        <p>Otimize seu currículo para uma vaga específica sem inventar experiência.</p>
+      </div>
 
       <div
         className="dropzone"
@@ -72,6 +75,13 @@ export default function Uploader({ loading, onSubmit, error }) {
         <small>ou clique para selecionar (PDF, MD, TXT)</small>
       </div>
 
+      {cvFile && (
+        <div className="file-meta">
+          <span>Arquivo pronto</span>
+          <span>{Math.max(1, Math.round(cvFile.size / 1024))} KB</span>
+        </div>
+      )}
+
       <label htmlFor="job-source">Descrição da vaga (URL ou texto)</label>
       <textarea
         id="job-source"
@@ -80,6 +90,10 @@ export default function Uploader({ loading, onSubmit, error }) {
         rows={6}
         placeholder="Cole a URL da vaga ou o texto completo da descrição"
       />
+      <div className="input-meta">
+        <small>Mínimo recomendado: 20 caracteres.</small>
+        <small>{sourceLength} caracteres</small>
+      </div>
 
       {(localError || error) && <div className="error-box">{localError || error}</div>}
 

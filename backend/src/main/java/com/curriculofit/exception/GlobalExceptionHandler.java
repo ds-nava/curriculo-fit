@@ -17,8 +17,19 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
-        log.error("Erro de validação/regra de negócio: {}", ex.getMessage(), ex);
-        ErrorResponse error = new ErrorResponse(Instant.now(), HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+        String message = ex.getMessage() == null ? "" : ex.getMessage();
+        if (isRateLimitMessage(message)) {
+            log.warn("Limite temporário do provedor de IA atingido: {}", message);
+            ErrorResponse error = new ErrorResponse(
+                    Instant.now(),
+                    HttpStatus.TOO_MANY_REQUESTS.value(),
+                    message
+            );
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(error);
+        }
+
+        log.error("Erro de validação/regra de negócio: {}", message, ex);
+        ErrorResponse error = new ErrorResponse(Instant.now(), HttpStatus.BAD_REQUEST.value(), message);
         return ResponseEntity.badRequest().body(error);
     }
 
@@ -50,5 +61,14 @@ public class GlobalExceptionHandler {
             int status,
             String message
     ) {
+    }
+
+    private boolean isRateLimitMessage(String message) {
+        String normalized = message.toLowerCase();
+        return normalized.contains("rate limit")
+                || normalized.contains("limite de tokens")
+                || normalized.contains("tokens per day")
+                || normalized.contains("tokens per minute")
+                || normalized.contains("quota");
     }
 }

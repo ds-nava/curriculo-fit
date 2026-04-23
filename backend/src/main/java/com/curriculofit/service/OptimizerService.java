@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -69,7 +70,7 @@ public class OptimizerService {
         String rawResponse = callModel(prompt);
 
         log.info("Etapa 6/10 - Limpando possíveis markdown fences");
-        OptimizeResponse initialResponse = parseOptimizeResponse(rawResponse);
+        OptimizeResponse initialResponse = enrichMissingAnalysis(parseOptimizeResponse(rawResponse));
 
         if (!isLowQuality(initialResponse, normalizedCvText, normalizedJobText)) {
             return initialResponse;
@@ -84,16 +85,124 @@ public class OptimizerService {
 
         try {
             String retryRawResponse = callModel(strictPrompt);
-            OptimizeResponse retryResponse = parseOptimizeResponse(retryRawResponse);
+            OptimizeResponse retryResponse = enrichMissingAnalysis(parseOptimizeResponse(retryRawResponse));
             if (!isLowQuality(retryResponse, normalizedCvText, normalizedJobText)) {
                 return retryResponse;
             }
             log.warn("Segunda tentativa ainda com baixa densidade. Retornando melhor resultado disponível.");
-            return retryResponse;
+            return initialResponse;
         } catch (RuntimeException ex) {
             log.warn("Falha na segunda tentativa de geração. Retornando primeira resposta válida.", ex);
             return initialResponse;
         }
+    }
+
+    private OptimizeResponse enrichMissingAnalysis(OptimizeResponse response) {
+        if (response == null || response.analise() == null) {
+            return response;
+        }
+
+        FitAnalysis analise = response.analise();
+        int score = Math.max(0, Math.min(100, analise.scoreCompatibilidade()));
+
+        FitAnalysis.DiagnosticoEstrutural diagnostico = analise.diagnosticoEstrutural();
+        if (diagnostico == null) {
+            boolean estruturaAdequada = score >= 75;
+            List<String> reordenar = estruturaAdequada
+                    ? List.of("Priorização por aderência")
+                    : List.of("Resumo", "Competências", "Experiências Relevantes");
+            List<String> comprimir = safeList(analise.gapsCriticos()).isEmpty()
+                    ? List.of("Seções genéricas sem aderência direta")
+                    : List.of("Experiências pouco aderentes à vaga");
+            List<String> expandir = safeList(analise.pontosFortes()).isEmpty()
+                    ? List.of("Experiências com resultados")
+                    : List.of("Pontos fortes aderentes à vaga");
+
+            diagnostico = new FitAnalysis.DiagnosticoEstrutural(
+                    estruturaAdequada,
+                    defaultText(analise.resumo(), "Estrutura inferida automaticamente por ausência de diagnóstico detalhado da IA."),
+                    reordenar,
+                    comprimir,
+                    expandir,
+                    List.of("Resumo", "Competencias-Chave", "Experiencias Relevantes", "Projetos", "Formacao")
+            );
+        }
+
+        List<FitAnalysis.CoberturaRequisito> cobertura = analise.coberturaRequisitos();
+        if (isEmptyList(cobertura)) {
+            cobertura = buildFallbackCoverage(analise);
+        }
+
+        FitAnalysis.Subscores subscores = analise.subscores();
+        if (subscores == null) {
+            subscores = buildFallbackSubscores(score);
+        }
+
+        FitAnalysis enrichedAnalysis = new FitAnalysis(
+                score,
+                analise.resumo(),
+                analise.pontosFortes(),
+                analise.gapsCriticos(),
+                analise.keywordsPresentes(),
+                analise.keywordsAusentes(),
+                analise.recomendacoes(),
+                diagnostico,
+                cobertura,
+                subscores
+        );
+
+        return new OptimizeResponse(response.cvOtimizado(), enrichedAnalysis);
+    }
+
+    private List<FitAnalysis.CoberturaRequisito> buildFallbackCoverage(FitAnalysis analise) {
+        List<FitAnalysis.CoberturaRequisito> coverage = new ArrayList<>();
+
+        for (String keyword : safeList(analise.keywordsPresentes()).stream().limit(3).toList()) {
+            coverage.add(new FitAnalysis.CoberturaRequisito(
+                    keyword,
+                    "atende_parcial",
+                    "Keyword identificada no currículo: " + keyword,
+                    "media"
+            ));
+        }
+
+        for (String keyword : safeList(analise.keywordsAusentes()).stream().limit(2).toList()) {
+            coverage.add(new FitAnalysis.CoberturaRequisito(
+                    keyword,
+                    "nao_atende",
+                    "Keyword não evidenciada no currículo otimizado.",
+                    "media"
+            ));
+        }
+
+        if (coverage.isEmpty()) {
+            coverage.add(new FitAnalysis.CoberturaRequisito(
+                    "Aderência geral da vaga",
+                    "atende_parcial",
+                    defaultText(analise.resumo(), "Sem evidências detalhadas retornadas pela IA."),
+                    "baixa"
+            ));
+        }
+
+        return coverage;
+    }
+
+    private FitAnalysis.Subscores buildFallbackSubscores(int score) {
+        int tecnica = Math.max(0, Math.min(40, (int) Math.round(score * 0.40)));
+        int responsabilidades = Math.max(0, Math.min(25, (int) Math.round(score * 0.25)));
+        int dominio = Math.max(0, Math.min(20, (int) Math.round(score * 0.20)));
+        int clareza = score - tecnica - responsabilidades - dominio;
+        clareza = Math.max(0, Math.min(15, clareza));
+
+        return new FitAnalysis.Subscores(tecnica, responsabilidades, dominio, clareza);
+    }
+
+    private List<String> safeList(List<String> values) {
+        return values == null ? List.of() : values;
+    }
+
+    private String defaultText(String value, String fallback) {
+        return isBlank(value) ? fallback : value;
     }
 
     private String callModel(String prompt) {
@@ -149,7 +258,29 @@ public class OptimizerService {
                 + "    \"gaps_criticos\": [\"string\"],\n"
                 + "    \"keywords_presentes\": [\"string\"],\n"
                 + "    \"keywords_ausentes\": [\"string\"],\n"
-                + "    \"recomendacoes\": [\"string\"]\n"
+                + "    \"recomendacoes\": [\"string\"],\n"
+                + "    \"diagnostico_estrutural\": {\n"
+                + "      \"estrutura_atual_adequada\": false,\n"
+                + "      \"motivo_estrutural\": \"string\",\n"
+                + "      \"secoes_a_reordenar\": [\"string\"],\n"
+                + "      \"secoes_a_comprimir\": [\"string\"],\n"
+                + "      \"secoes_a_expandir\": [\"string\"],\n"
+                + "      \"novo_outline_sugerido\": [\"string\"]\n"
+                + "    },\n"
+                + "    \"cobertura_requisitos\": [\n"
+                + "      {\n"
+                + "        \"requisito\": \"string\",\n"
+                + "        \"status\": \"atende_parcial|atende_total|nao_atende\",\n"
+                + "        \"evidencia_curriculo\": \"string\",\n"
+                + "        \"confianca\": \"alta|media|baixa\"\n"
+                + "      }\n"
+                + "    ],\n"
+                + "    \"subscores\": {\n"
+                + "      \"aderencia_tecnica\": 0,\n"
+                + "      \"aderencia_responsabilidades\": 0,\n"
+                + "      \"aderencia_dominio\": 0,\n"
+                + "      \"clareza_comunicacao\": 0\n"
+                + "    }\n"
                 + "  }\n"
                 + "}\n\n"
                 + "CONTEÚDO PARA REPARO:\n"
@@ -197,7 +328,82 @@ public class OptimizerService {
                 || hasTooFewMeaningfulItems(analise.gapsCriticos(), 2)
                 || hasTooFewMeaningfulItems(analise.keywordsPresentes(), Math.min(6, expectedKeywordsThreshold(jobText)))
                 || hasTooFewMeaningfulItems(analise.keywordsAusentes(), Math.min(6, expectedKeywordsThreshold(jobText)))
-                || hasTooFewMeaningfulItems(analise.recomendacoes(), 3);
+                || hasTooFewMeaningfulItems(analise.recomendacoes(), 3)
+                || isStructuralAnalysisLowQuality(analise)
+                || isCoverageLowQuality(analise)
+                || isSubscoresLowQuality(analise);
+    }
+
+    private boolean isStructuralAnalysisLowQuality(FitAnalysis analise) {
+        FitAnalysis.DiagnosticoEstrutural diagnostico = analise.diagnosticoEstrutural();
+        if (diagnostico == null || isBlank(diagnostico.motivoEstrutural())) {
+            return true;
+        }
+
+        boolean hasAnyStructuralAction = !isEmptyList(diagnostico.secoesAReordenar())
+                || !isEmptyList(diagnostico.secoesAComprimir())
+                || !isEmptyList(diagnostico.secoesAExpandir())
+                || !isEmptyList(diagnostico.novoOutlineSugerido());
+
+        return !hasAnyStructuralAction;
+    }
+
+    private boolean isCoverageLowQuality(FitAnalysis analise) {
+        if (isEmptyList(analise.coberturaRequisitos())) {
+            return true;
+        }
+
+        return analise.coberturaRequisitos().stream().anyMatch(item ->
+                item == null
+                        || isBlank(item.requisito())
+                        || isBlank(item.evidenciaCurriculo())
+                        || !isAllowedCoverageStatus(item.status())
+                        || !isAllowedConfidence(item.confianca())
+        );
+    }
+
+    private boolean isSubscoresLowQuality(FitAnalysis analise) {
+        FitAnalysis.Subscores subscores = analise.subscores();
+        if (subscores == null) {
+            return true;
+        }
+
+        boolean outOfRange = !isWithin(subscores.aderenciaTecnica(), 0, 40)
+                || !isWithin(subscores.aderenciaResponsabilidades(), 0, 25)
+                || !isWithin(subscores.aderenciaDominio(), 0, 20)
+                || !isWithin(subscores.clarezaComunicacao(), 0, 15);
+        if (outOfRange) {
+            return true;
+        }
+
+        int sum = subscores.aderenciaTecnica()
+                + subscores.aderenciaResponsabilidades()
+                + subscores.aderenciaDominio()
+                + subscores.clarezaComunicacao();
+
+        return Math.abs(sum - analise.scoreCompatibilidade()) > 15;
+    }
+
+    private boolean isAllowedCoverageStatus(String status) {
+        String normalized = status == null ? "" : status.trim().toLowerCase();
+        return "atende_parcial".equals(normalized)
+                || "atende_total".equals(normalized)
+                || "nao_atende".equals(normalized);
+    }
+
+    private boolean isAllowedConfidence(String confidence) {
+        String normalized = confidence == null ? "" : confidence.trim().toLowerCase();
+        return "alta".equals(normalized)
+                || "media".equals(normalized)
+                || "baixa".equals(normalized);
+    }
+
+    private boolean isWithin(int value, int min, int max) {
+        return value >= min && value <= max;
+    }
+
+    private boolean isEmptyList(List<?> values) {
+        return values == null || values.isEmpty();
     }
 
     private boolean isEffectivelyUnchanged(String originalCv, String optimizedCv) {
