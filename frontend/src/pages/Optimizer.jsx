@@ -27,8 +27,8 @@ export default function Optimizer() {
   return (
     <main className="app-shell">
       <section className="app-hero fade-in">
-        <span className="hero-kicker">CurriculoFit Studio</span>
-        <h1>Seu currículo, calibrado para a vaga certa.</h1>
+        <span className="hero-kicker">CurriculoFit</span>
+        <h1>Seu currículo, otimizado para a vaga certa.</h1>
         <p>
           Envie o CV, descreva a oportunidade e receba uma versão otimizada com análise objetiva de compatibilidade.
         </p>
