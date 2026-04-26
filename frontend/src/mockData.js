@@ -119,27 +119,32 @@ Desenvolvedor Full Stack com 6+ anos de experiência em desenvolvimento de aplic
       {
         requisito: "6+ anos de experiência com React",
         status: "atende_total",
-        evidencia_curriculo: "Senior Full Stack Developer com 6 anos, menção explícita a React em múltiplos contextos"
+        evidencia_curriculo: "Senior Full Stack Developer com 6 anos, menção explícita a React em múltiplos contextos",
+        confianca: "alta"
       },
       {
         requisito: "Experiência com Node.js e arquitetura de APIs",
         status: "atende_total",
-        evidencia_curriculo: "APIs REST Node.js, GraphQL mencionado, múltiplos projetos em backends"
+        evidencia_curriculo: "APIs REST Node.js, GraphQL mencionado, múltiplos projetos em backends",
+        confianca: "alta"
       },
       {
         requisito: "Conhecimento de Docker e Kubernetes",
         status: "atende_total",
-        evidencia_curriculo: "Implementou arquitetura com Docker e Kubernetes, reduziu deployment time em 70%"
+        evidencia_curriculo: "Implementou arquitetura com Docker e Kubernetes, reduziu deployment time em 70%",
+        confianca: "alta"
       },
       {
         requisito: "Liderança técnica",
         status: "atende_total",
-        evidencia_curriculo: "Mentorizou 3 desenvolvedores juniores, liderou migração de arquitetura"
+        evidencia_curriculo: "Mentorizou 3 desenvolvedores juniores, liderou migração de arquitetura",
+        confianca: "media"
       },
       {
         requisito: "Experiência com bancos de dados SQL e NoSQL",
         status: "atende_total",
-        evidencia_curriculo: "PostgreSQL, MongoDB, Redis mencionados"
+        evidencia_curriculo: "PostgreSQL, MongoDB, Redis mencionados",
+        confianca: "media"
       }
     ]
   }
