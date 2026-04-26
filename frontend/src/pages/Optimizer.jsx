@@ -60,7 +60,7 @@ export default function Optimizer() {
               <span className="result-chip">{status === 'loading' ? 'Processando' : 'Concluído'}</span>
               {USE_MOCK_DATA && (
                 <span className="test-badge" title="Usando dados de teste local">
-                  🧪 Dados de Teste
+                  Dados de Teste
                 </span>
               )}
             </div>
