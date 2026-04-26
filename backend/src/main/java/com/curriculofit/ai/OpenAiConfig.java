@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import java.util.Objects;
 
 @Configuration
-public class AnthropicConfig {
+public class OpenAiConfig {
 
     @Bean
     public ChatClient chatClient(OpenAiChatModel openAiChatModel) {

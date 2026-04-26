@@ -206,6 +206,7 @@ mvn test
 
 - Spring AI: simplifica integracao com provedores LLM via abstrações de chat e prompts.
 - Groq com endpoint OpenAI-compatible: integracao simples com Spring AI e boa opcao para testes.
+- Configuracao Spring AI: o bean de ChatClient fica em backend/src/main/java/com/curriculofit/ai/OpenAiConfig.java.
 - PDFBox: biblioteca madura e estavel para extracao de texto de PDF.
 - r.jina.ai: ajuda na extracao de texto limpo de URLs de vaga.
 - React + Vite: setup rapido para desenvolvimento iterativo do frontend.
