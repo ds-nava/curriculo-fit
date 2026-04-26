@@ -1,3 +1,5 @@
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, Tooltip, ResponsiveContainer } from 'recharts';
+
 function progressColor(score) {
   if (score < 50) return 'var(--danger)';
   if (score <= 75) return 'var(--warning)';
@@ -11,9 +13,36 @@ function statusLabel(status) {
   return 'Status nao informado';
 }
 
+function formatSubscoresToRadarData(subscores) {
+  if (!subscores) return [];
+  return [
+    {
+      categoria: 'Técnica',
+      valor: subscores.aderencia_tecnica || 0,
+      fullMark: 40
+    },
+    {
+      categoria: 'Responsabilidades',
+      valor: subscores.aderencia_responsabilidades || 0,
+      fullMark: 25
+    },
+    {
+      categoria: 'Domínio',
+      valor: subscores.aderencia_dominio || 0,
+      fullMark: 20
+    },
+    {
+      categoria: 'Clareza',
+      valor: subscores.clareza_comunicacao || 0,
+      fullMark: 15
+    }
+  ];
+}
+
 export default function FitAnalysis({ analise }) {
   const score = analise?.score_compatibilidade ?? 0;
   const subscores = analise?.subscores;
+  const radarData = formatSubscoresToRadarData(subscores);
   const recomendacoesDiretas = (analise?.recomendacoes || []).filter(Boolean);
   const diagnostico = analise?.diagnostico_estrutural;
   const estruturaAtual = diagnostico?.estrutura_atual_adequada === true
@@ -41,6 +70,39 @@ export default function FitAnalysis({ analise }) {
           />
         </div>
       </div>
+
+      {radarData.length > 0 && (
+        <div className="radar-container">
+          <h4>Análise Detalhada (Subscores)</h4>
+          <ResponsiveContainer width="100%" height={300}>
+            <RadarChart data={radarData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
+              <PolarGrid stroke="#e0e0e0" />
+              <PolarAngleAxis dataKey="categoria" />
+              <PolarRadiusAxis angle={90} domain={[0, 40]} />
+              <Radar 
+                name="Pontuação" 
+                dataKey="valor" 
+                stroke="#3b82f6" 
+                fill="#3b82f6" 
+                fillOpacity={0.6} 
+              />
+              <Tooltip 
+                formatter={(value) => value.toFixed(1)}
+                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', border: '1px solid #ccc', borderRadius: '4px' }}
+              />
+              <Legend />
+            </RadarChart>
+          </ResponsiveContainer>
+          <div className="subscores-summary">
+            <ul>
+              <li>Aderência técnica: <strong>{subscores?.aderencia_tecnica ?? 0}/40</strong></li>
+              <li>Aderência de responsabilidades: <strong>{subscores?.aderencia_responsabilidades ?? 0}/25</strong></li>
+              <li>Aderência de domínio: <strong>{subscores?.aderencia_dominio ?? 0}/20</strong></li>
+              <li>Clareza de comunicação: <strong>{subscores?.clareza_comunicacao ?? 0}/15</strong></li>
+            </ul>
+          </div>
+        </div>
+      )}
 
       <p className="summary">{analise?.resumo}</p>
 
@@ -113,16 +175,6 @@ export default function FitAnalysis({ analise }) {
               <li>Sem recomendações disponíveis.</li>
             </ul>
           )}
-        </section>
-
-        <section className="analysis-card full-width">
-          <h4>Subscores</h4>
-          <ul>
-            <li>Aderência técnica: {subscores?.aderencia_tecnica ?? 0}/40</li>
-            <li>Aderência de responsabilidades: {subscores?.aderencia_responsabilidades ?? 0}/25</li>
-            <li>Aderência de domínio: {subscores?.aderencia_dominio ?? 0}/20</li>
-            <li>Clareza de comunicação: {subscores?.clareza_comunicacao ?? 0}/15</li>
-          </ul>
         </section>
       </div>
     </section>

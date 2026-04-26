@@ -422,3 +422,46 @@ textarea:focus {
     align-items: flex-start;
   }
 }
+
+.radar-container {
+  background: #fff;
+  border: 1px solid rgba(32, 34, 37, 0.12);
+  border-radius: 14px;
+  padding: 1.2rem;
+  margin: 1rem 0;
+  margin-bottom: 1.5rem;
+}
+
+.radar-container h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.radar-container .recharts-wrapper {
+  margin: 0 auto;
+}
+
+.subscores-summary {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed rgba(32, 34, 37, 0.12);
+}
+
+.subscores-summary ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  list-style-type: none;
+}
+
+.subscores-summary li {
+  margin: 0.4rem 0;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.subscores-summary strong {
+  color: #3b82f6;
+  font-weight: 600;
+}
