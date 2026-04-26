@@ -1,5 +1,5 @@
 const runtimeDefaultApiBaseUrl =
-  window.location.hostname === 'localhost' && window.location.port === '5173'
+  window.location.hostname === 'localhost'
     ? 'http://localhost:8080'
     : window.location.origin;
 
@@ -31,15 +31,45 @@ export async function optimizeCv(cvFile, jobSource) {
   }
 
   if (!response.ok) {
-    let message = 'Não foi possível otimizar o currículo no momento.';
-    try {
-      const errorBody = await response.json();
-      message = errorBody.message || message;
-    } catch {
-      // Mantém a mensagem padrão se a API não retornar JSON.
-    }
-    throw new Error(message);
+    throw new Error(await readErrorMessage(response));
   }
 
   return response.json();
+}
+
+async function readErrorMessage(response) {
+  const fallbackMessage = response.status
+    ? `Não foi possível otimizar o currículo no momento. (${response.status}${response.statusText ? ` ${response.statusText}` : ''})`
+    : 'Não foi possível otimizar o currículo no momento.';
+
+  const contentType = response.headers.get('content-type') || '';
+
+  if (contentType.includes('application/json')) {
+    try {
+      const errorBody = await response.json();
+      return errorBody?.message || errorBody?.detail || errorBody?.error || fallbackMessage;
+    } catch {
+      return fallbackMessage;
+    }
+  }
+
+  try {
+    const rawBody = (await response.text()).trim();
+    if (!rawBody) {
+      return fallbackMessage;
+    }
+
+    if (rawBody.startsWith('<')) {
+      return fallbackMessage;
+    }
+
+    try {
+      const parsedBody = JSON.parse(rawBody);
+      return parsedBody?.message || parsedBody?.detail || parsedBody?.error || rawBody || fallbackMessage;
+    } catch {
+      return rawBody;
+    }
+  } catch {
+    return fallbackMessage;
+  }
 }
