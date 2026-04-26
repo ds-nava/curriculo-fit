@@ -3,6 +3,8 @@ import Uploader from '../components/Uploader';
 import CVPreview from '../components/CVPreview';
 import FitAnalysis from '../components/FitAnalysis';
 import { optimizeCv } from '../services/api';
+import { USE_MOCK_DATA, getMockDelay } from '../testConfig';
+import { mockAnalysisResponse } from '../mockData';
 
 export default function Optimizer() {
   const [status, setStatus] = useState('idle');
@@ -14,7 +16,19 @@ export default function Optimizer() {
     try {
       setStatus('loading');
       setError('');
-      const data = await optimizeCv(cvFile, jobSource);
+      
+      let data;
+      if (USE_MOCK_DATA) {
+        // Modo TESTE: usa dados mock locais
+        console.log('🧪 MODO TESTE: Usando dados mock (sem chamar IA)');
+        await getMockDelay(); // Simula latência
+        data = mockAnalysisResponse;
+      } else {
+        // Modo PRODUÇÃO: chama a API real
+        console.log('🚀 MODO PRODUÇÃO: Chamando API de IA');
+        data = await optimizeCv(cvFile, jobSource);
+      }
+      
       setResult(data);
       setActiveTab('curriculo');
       setStatus('success');
@@ -44,6 +58,11 @@ export default function Optimizer() {
             <div className="results-header">
               <h2>Resultado da Otimização</h2>
               <span className="result-chip">{status === 'loading' ? 'Processando' : 'Concluído'}</span>
+              {USE_MOCK_DATA && (
+                <span className="test-badge" title="Usando dados de teste local">
+                  🧪 Dados de Teste
+                </span>
+              )}
             </div>
 
             <div className="tabs" role="tablist" aria-label="Visualização de resultados">

@@ -15,26 +15,31 @@ function statusLabel(status) {
 
 function formatSubscoresToRadarData(subscores) {
   if (!subscores) return [];
+  // Converter para porcentagem (max 100%)
   return [
     {
       categoria: 'Técnica',
-      valor: subscores.aderencia_tecnica || 0,
-      fullMark: 40
+      valor: (subscores.aderencia_tecnica / 40) * 100 || 0,
+      valor_bruto: subscores.aderencia_tecnica || 0,
+      max_valor: 40
     },
     {
       categoria: 'Responsabilidades',
-      valor: subscores.aderencia_responsabilidades || 0,
-      fullMark: 25
+      valor: (subscores.aderencia_responsabilidades / 25) * 100 || 0,
+      valor_bruto: subscores.aderencia_responsabilidades || 0,
+      max_valor: 25
     },
     {
       categoria: 'Domínio',
-      valor: subscores.aderencia_dominio || 0,
-      fullMark: 20
+      valor: (subscores.aderencia_dominio / 20) * 100 || 0,
+      valor_bruto: subscores.aderencia_dominio || 0,
+      max_valor: 20
     },
     {
       categoria: 'Clareza',
-      valor: subscores.clareza_comunicacao || 0,
-      fullMark: 15
+      valor: (subscores.clareza_comunicacao / 15) * 100 || 0,
+      valor_bruto: subscores.clareza_comunicacao || 0,
+      max_valor: 15
     }
   ];
 }
@@ -78,27 +83,60 @@ export default function FitAnalysis({ analise }) {
             <RadarChart data={radarData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
               <PolarGrid stroke="#e0e0e0" />
               <PolarAngleAxis dataKey="categoria" />
-              <PolarRadiusAxis angle={90} domain={[0, 40]} />
+              <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} />
               <Radar 
-                name="Pontuação" 
+                name="Pontuação (%)" 
                 dataKey="valor" 
                 stroke="#3b82f6" 
                 fill="#3b82f6" 
                 fillOpacity={0.6} 
               />
               <Tooltip 
-                formatter={(value) => value.toFixed(1)}
-                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', border: '1px solid #ccc', borderRadius: '4px' }}
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.98)', 
+                  border: '1px solid #e0e0e0', 
+                  borderRadius: '6px',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                }}
+                formatter={(value, name, props) => {
+                  const item = props.payload;
+                  return [`${value.toFixed(1)}% (${item.valor_bruto}/${item.max_valor})`, name];
+                }}
+                labelStyle={{ color: 'var(--ink)', fontWeight: 600, fontSize: '0.9rem' }}
               />
               <Legend />
             </RadarChart>
           </ResponsiveContainer>
           <div className="subscores-summary">
             <ul>
-              <li>Aderência técnica: <strong>{subscores?.aderencia_tecnica ?? 0}/40</strong></li>
-              <li>Aderência de responsabilidades: <strong>{subscores?.aderencia_responsabilidades ?? 0}/25</strong></li>
-              <li>Aderência de domínio: <strong>{subscores?.aderencia_dominio ?? 0}/20</strong></li>
-              <li>Clareza de comunicação: <strong>{subscores?.clareza_comunicacao ?? 0}/15</strong></li>
+              <li>
+                <span className="criteria-label">
+                  Aderência técnica
+                  <span className="info-icon" data-explanation="Avalia se o currículo menciona as tecnologias, ferramentas e habilidades técnicas exigidas na vaga. Inclui linguagens de programação, frameworks, bibliotecas e competências específicas do domínio.">?</span>
+                </span>
+                <strong>{subscores?.aderencia_tecnica ?? 0}/40</strong> ({((subscores?.aderencia_tecnica || 0) / 40 * 100).toFixed(1)}%)
+              </li>
+              <li>
+                <span className="criteria-label">
+                  Aderência de responsabilidades
+                  <span className="info-icon" data-explanation="Analisa se as responsabilidades anteriores descrevem experiências que alinham com as responsabilidades da posição. Verifica se o candidato tem histórico em atividades similares.">?</span>
+                </span>
+                <strong>{subscores?.aderencia_responsabilidades ?? 0}/25</strong> ({((subscores?.aderencia_responsabilidades || 0) / 25 * 100).toFixed(1)}%)
+              </li>
+              <li>
+                <span className="criteria-label">
+                  Aderência de domínio
+                  <span className="info-icon" data-explanation="Verifica se o currículo demonstra experiência no domínio/setor da vaga (ex: fintech, e-commerce, saúde). Busca por projetos, empresas ou contextos similares.">?</span>
+                </span>
+                <strong>{subscores?.aderencia_dominio ?? 0}/20</strong> ({((subscores?.aderencia_dominio || 0) / 20 * 100).toFixed(1)}%)
+              </li>
+              <li>
+                <span className="criteria-label">
+                  Clareza de comunicação
+                  <span className="info-icon" data-explanation="Avalia a qualidade da comunicação no currículo: estrutura, objetividade, uso de termos profissionais e organização das informações. Um currículo claro facilita o entendimento.">?</span>
+                </span>
+                <strong>{subscores?.clareza_comunicacao ?? 0}/15</strong> ({((subscores?.clareza_comunicacao || 0) / 15 * 100).toFixed(1)}%)
+              </li>
             </ul>
           </div>
         </div>
@@ -115,11 +153,11 @@ export default function FitAnalysis({ analise }) {
           <h4>Gaps Críticos</h4>
           <ul>{(analise?.gaps_criticos || []).map((item) => <li key={`gc-${item}`}>{item}</li>)}</ul>
         </section>
-        <section className="analysis-card keywords">
+        <section className="analysis-card present-keywords">
           <h4>Keywords Presentes</h4>
           <ul>{(analise?.keywords_presentes || []).map((item) => <li key={`kp-${item}`}>{item}</li>)}</ul>
         </section>
-        <section className="analysis-card keywords">
+        <section className="analysis-card absent-keywords">
           <h4>Keywords Ausentes</h4>
           <ul>{(analise?.keywords_ausentes || []).map((item) => <li key={`ka-${item}`}>{item}</li>)}</ul>
         </section>
