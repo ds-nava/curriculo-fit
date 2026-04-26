@@ -107,19 +107,19 @@ export default function FitAnalysis({ analise }) {
       <p className="summary">{analise?.resumo}</p>
 
       <div className="analysis-grid">
-        <section className="analysis-card">
+        <section className="analysis-card strengths">
           <h4>Pontos Fortes</h4>
           <ul>{(analise?.pontos_fortes || []).map((item) => <li key={`pf-${item}`}>{item}</li>)}</ul>
         </section>
-        <section className="analysis-card">
+        <section className="analysis-card gaps">
           <h4>Gaps Críticos</h4>
           <ul>{(analise?.gaps_criticos || []).map((item) => <li key={`gc-${item}`}>{item}</li>)}</ul>
         </section>
-        <section className="analysis-card">
+        <section className="analysis-card keywords">
           <h4>Keywords Presentes</h4>
           <ul>{(analise?.keywords_presentes || []).map((item) => <li key={`kp-${item}`}>{item}</li>)}</ul>
         </section>
-        <section className="analysis-card">
+        <section className="analysis-card keywords">
           <h4>Keywords Ausentes</h4>
           <ul>{(analise?.keywords_ausentes || []).map((item) => <li key={`ka-${item}`}>{item}</li>)}</ul>
         </section>
@@ -135,9 +135,15 @@ export default function FitAnalysis({ analise }) {
           )}
 
           {diagnostico && (
-            <div className="recommendation-block">
+            <div className="recommendation-block diagnostic">
               <h5>Diagnóstico Estrutural</h5>
-              <p><strong>Estrutura atual:</strong> {estruturaAtual}</p>
+              <p><strong>Estrutura atual:</strong> <span style={
+                diagnostico?.estrutura_atual_adequada === true 
+                  ? { color: 'var(--success)', fontWeight: 500 }
+                  : diagnostico?.estrutura_atual_adequada === false
+                    ? { color: 'var(--danger)', fontWeight: 500 }
+                    : {}
+              }>{estruturaAtual}</span></p>
               {diagnostico?.motivo_estrutural && <p>{diagnostico.motivo_estrutural}</p>}
 
               {(diagnostico?.secoes_a_reordenar || []).length > 0 && (
@@ -156,24 +162,28 @@ export default function FitAnalysis({ analise }) {
           )}
 
           {coberturaRelevante.length > 0 && (
-            <div className="recommendation-block">
+            <div className="recommendation-block cobertura">
               <h5>Cobertura dos Requisitos (Top 3)</h5>
-              <ul>
+              <div>
                 {coberturaRelevante.map((item, index) => (
-                  <li key={`cv-${index}-${item?.requisito || 'req'}`}>
-                    <strong>{item?.requisito || 'Requisito nao identificado'}</strong>: {statusLabel(item?.status)}
-                    <br />
-                    <span>{item?.evidencia_curriculo || 'Evidencia nao informada'}</span>
-                  </li>
+                  <div key={`cv-${index}-${item?.requisito || 'req'}`} className="requirement-item">
+                    <div className="requirement-header">
+                      <span className="requirement-title">{item?.requisito || 'Requisito nao identificado'}</span>
+                      <span className={`requirement-status ${item?.status === 'atende_total' ? 'total' : item?.status === 'atende_parcial' ? 'parcial' : 'nao-atende'}`}>
+                        {statusLabel(item?.status)}
+                      </span>
+                    </div>
+                    <p className="requirement-evidence">{item?.evidencia_curriculo || 'Evidencia nao informada'}</p>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
 
           {recomendacoesDiretas.length === 0 && !diagnostico && coberturaRelevante.length === 0 && (
-            <ul>
-              <li>Sem recomendações disponíveis.</li>
-            </ul>
+            <div className="no-recommendations">
+              <p>Sem recomendações disponíveis.</p>
+            </div>
           )}
         </section>
       </div>

@@ -465,3 +465,240 @@ textarea:focus {
   color: #3b82f6;
   font-weight: 600;
 }
+
+/* Enhanced Analysis Cards with Semantic Colors */
+.analysis-card {
+  border-left: 4px solid #d8ccb9;
+  transition: all 200ms ease;
+}
+
+.analysis-card:hover {
+  box-shadow: 0 8px 20px rgba(15, 44, 54, 0.08);
+  transform: translateY(-2px);
+}
+
+.analysis-card h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.8rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* Card Types with Semantic Colors */
+.analysis-card.strengths {
+  border-left-color: var(--success);
+  background: linear-gradient(135deg, rgba(30, 141, 84, 0.05), rgba(30, 141, 84, 0.02));
+}
+
+.analysis-card.strengths h4::before {
+  content: "✓";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--success);
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.analysis-card.gaps {
+  border-left-color: var(--danger);
+  background: linear-gradient(135deg, rgba(185, 56, 47, 0.05), rgba(185, 56, 47, 0.02));
+}
+
+.analysis-card.gaps h4::before {
+  content: "!";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--danger);
+  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.analysis-card.keywords {
+  border-left-color: #3b82f6;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(59, 130, 246, 0.02));
+}
+
+.analysis-card.keywords h4::before {
+  content: "#";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.analysis-card ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.analysis-card li {
+  padding: 0.5rem 0 0.5rem 1.6rem;
+  position: relative;
+  font-size: 0.9rem;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.analysis-card li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  font-weight: 600;
+}
+
+.analysis-card.gaps li::before {
+  content: "⚠";
+  font-size: 0.85rem;
+  color: var(--danger);
+}
+
+.analysis-card.strengths li::before {
+  content: "→";
+  color: var(--success);
+}
+
+.analysis-card.keywords li::before {
+  content: "#";
+  color: #3b82f6;
+  font-size: 0.8rem;
+}
+
+/* Recommendation Block Enhancement */
+.recommendation-block {
+  background: rgba(204, 138, 0, 0.04);
+  border-left: 4px solid var(--warning);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  margin: 0;
+}
+
+.recommendation-block h5 {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  color: var(--ink);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.recommendation-block h5::before {
+  content: "💡";
+  font-size: 0.9rem;
+}
+
+.recommendation-block.diagnostic h5::before {
+  content: "🔍";
+}
+
+.recommendation-block.cobertura h5::before {
+  content: "📋";
+}
+
+.recommendation-block ol {
+  margin: 0;
+  padding-left: 1.8rem;
+}
+
+.recommendation-block ol li {
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.recommendation-block ol li:first-child {
+  margin-top: 0;
+}
+
+/* Requirement Coverage with Progress */
+.requirement-item {
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid rgba(32, 34, 37, 0.08);
+}
+
+.requirement-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.requirement-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+  gap: 0.5rem;
+}
+
+.requirement-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ink);
+  flex: 1;
+}
+
+.requirement-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.requirement-status.total {
+  background: rgba(30, 141, 84, 0.15);
+  color: #0d5f30;
+}
+
+.requirement-status.parcial {
+  background: rgba(204, 138, 0, 0.15);
+  color: #663d00;
+}
+
+.requirement-status.nao-atende {
+  background: rgba(185, 56, 47, 0.15);
+  color: #6b1f1a;
+}
+
+.requirement-evidence {
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding-left: 0;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.no-recommendations {
+  padding: 1.5rem;
+  background: rgba(102, 101, 93, 0.05);
+  border: 1px dashed rgba(102, 101, 93, 0.2);
+  border-radius: 8px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
