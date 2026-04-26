@@ -4,55 +4,26 @@ function progressColor(score) {
   return 'var(--success)';
 }
 
-function joinList(items) {
-  return (items || []).filter(Boolean).join(', ');
+function statusLabel(status) {
+  if (status === 'atende_total') return 'Atende totalmente';
+  if (status === 'atende_parcial') return 'Atende parcialmente';
+  if (status === 'nao_atende') return 'Nao atende';
+  return 'Status nao informado';
 }
 
 export default function FitAnalysis({ analise }) {
   const score = analise?.score_compatibilidade ?? 0;
   const subscores = analise?.subscores;
-  const feedbackComplementar = [];
-
+  const recomendacoesDiretas = (analise?.recomendacoes || []).filter(Boolean);
   const diagnostico = analise?.diagnostico_estrutural;
-  if (diagnostico) {
-    feedbackComplementar.push(
-      `Estrutura atual: ${diagnostico?.estrutura_atual_adequada === true
-        ? 'adequada'
-        : diagnostico?.estrutura_atual_adequada === false
-          ? 'não adequada'
-          : 'não informada'}${diagnostico?.motivo_estrutural ? `. ${diagnostico.motivo_estrutural}` : '.'}`
-    );
-
-    const secoesAReordenar = joinList(diagnostico?.secoes_a_reordenar);
-    const secoesAComprimir = joinList(diagnostico?.secoes_a_comprimir);
-    const secoesAExpandir = joinList(diagnostico?.secoes_a_expandir);
-    const novoOutline = joinList(diagnostico?.novo_outline_sugerido);
-
-    if (secoesAReordenar || secoesAComprimir || secoesAExpandir || novoOutline) {
-      const trechos = [];
-      if (secoesAReordenar) trechos.push(`reordenar: ${secoesAReordenar}`);
-      if (secoesAComprimir) trechos.push(`comprimir: ${secoesAComprimir}`);
-      if (secoesAExpandir) trechos.push(`expandir: ${secoesAExpandir}`);
-      if (novoOutline) trechos.push(`novo outline: ${novoOutline}`);
-      feedbackComplementar.push(`Ajustes estruturais sugeridos: ${trechos.join(' | ')}.`);
-    }
-  }
+  const estruturaAtual = diagnostico?.estrutura_atual_adequada === true
+    ? 'Adequada'
+    : diagnostico?.estrutura_atual_adequada === false
+      ? 'Nao adequada'
+      : 'Nao informada';
 
   const cobertura = analise?.cobertura_requisitos || [];
-  if (cobertura.length > 0) {
-    const itensRelevantes = cobertura.slice(0, 3).map((item) => {
-      const requisito = item?.requisito || 'Requisito não identificado';
-      const status = item?.status || 'status não informado';
-      const evidencia = item?.evidencia_curriculo || 'evidência não informada';
-      return `${requisito}: ${status} (${evidencia})`;
-    });
-    feedbackComplementar.push(`Cobertura dos requisitos: ${itensRelevantes.join(' | ')}${cobertura.length > 3 ? ' | ...' : ''}.`);
-  }
-
-  const recomendacoes = [
-    ...(analise?.recomendacoes || []),
-    ...feedbackComplementar,
-  ];
+  const coberturaRelevante = cobertura.slice(0, 3);
 
   return (
     <section className="panel fade-in">
@@ -92,11 +63,56 @@ export default function FitAnalysis({ analise }) {
         </section>
         <section className="analysis-card full-width">
           <h4>Recomendações</h4>
-          <ul>
-            {recomendacoes.length > 0
-              ? recomendacoes.map((item, index) => <li key={`rc-${index}-${item}`}>{item}</li>)
-              : <li>Sem recomendações disponíveis.</li>}
-          </ul>
+          {recomendacoesDiretas.length > 0 && (
+            <div className="recommendation-block">
+              <h5>Plano de Ação</h5>
+              <ol>
+                {recomendacoesDiretas.map((item, index) => <li key={`rc-${index}-${item}`}>{item}</li>)}
+              </ol>
+            </div>
+          )}
+
+          {diagnostico && (
+            <div className="recommendation-block">
+              <h5>Diagnóstico Estrutural</h5>
+              <p><strong>Estrutura atual:</strong> {estruturaAtual}</p>
+              {diagnostico?.motivo_estrutural && <p>{diagnostico.motivo_estrutural}</p>}
+
+              {(diagnostico?.secoes_a_reordenar || []).length > 0 && (
+                <p><strong>Reordenar:</strong> {diagnostico.secoes_a_reordenar.join(', ')}</p>
+              )}
+              {(diagnostico?.secoes_a_comprimir || []).length > 0 && (
+                <p><strong>Comprimir:</strong> {diagnostico.secoes_a_comprimir.join(', ')}</p>
+              )}
+              {(diagnostico?.secoes_a_expandir || []).length > 0 && (
+                <p><strong>Expandir:</strong> {diagnostico.secoes_a_expandir.join(', ')}</p>
+              )}
+              {(diagnostico?.novo_outline_sugerido || []).length > 0 && (
+                <p><strong>Novo outline:</strong> {diagnostico.novo_outline_sugerido.join(' > ')}</p>
+              )}
+            </div>
+          )}
+
+          {coberturaRelevante.length > 0 && (
+            <div className="recommendation-block">
+              <h5>Cobertura dos Requisitos (Top 3)</h5>
+              <ul>
+                {coberturaRelevante.map((item, index) => (
+                  <li key={`cv-${index}-${item?.requisito || 'req'}`}>
+                    <strong>{item?.requisito || 'Requisito nao identificado'}</strong>: {statusLabel(item?.status)}
+                    <br />
+                    <span>{item?.evidencia_curriculo || 'Evidencia nao informada'}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {recomendacoesDiretas.length === 0 && !diagnostico && coberturaRelevante.length === 0 && (
+            <ul>
+              <li>Sem recomendações disponíveis.</li>
+            </ul>
+          )}
         </section>
 
         <section className="analysis-card full-width">

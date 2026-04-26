@@ -341,6 +341,32 @@ textarea:focus {
   padding-left: 1.1rem;
 }
 
+.recommendation-block + .recommendation-block {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px dashed rgba(32, 34, 37, 0.18);
+}
+
+.recommendation-block h5 {
+  margin: 0 0 0.45rem;
+  font-size: 0.9rem;
+  color: #5a4a3e;
+}
+
+.recommendation-block p {
+  margin: 0.35rem 0;
+}
+
+.recommendation-block ol,
+.recommendation-block ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.recommendation-block li + li {
+  margin-top: 0.4rem;
+}
+
 .full-width {
   grid-column: 1 / -1;
 }
