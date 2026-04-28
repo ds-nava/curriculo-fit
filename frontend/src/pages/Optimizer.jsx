@@ -1,10 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Uploader from '../components/Uploader';
 import CVPreview from '../components/CVPreview';
 import FitAnalysis from '../components/FitAnalysis';
 import { optimizeCv, validateGroqKey } from '../services/api';
 import { USE_MOCK_DATA, getMockDelay } from '../testConfig';
 import { mockAnalysisResponse } from '../mockData';
+
+const LOADING_STEPS = [
+  'Etapa 1/7: Extraindo texto do currículo',
+  'Etapa 2/7: Coletando e normalizando dados da vaga',
+  'Etapa 3/7: Montando instruções para a IA',
+  'Etapa 4/7: Gerando currículo otimizado',
+  'Etapa 5/7: Validando qualidade e consistência',
+  'Etapa 6/7: Ajustando análise estrutural e cobertura',
+  'Etapa 7/7: Finalizando resposta para exibição'
+];
 
 export default function Optimizer() {
   const [status, setStatus] = useState('idle');
@@ -15,6 +25,21 @@ export default function Optimizer() {
   const [activeUserKey, setActiveUserKey] = useState('');
   const [keyStatus, setKeyStatus] = useState('idle');
   const [keyFeedback, setKeyFeedback] = useState('');
+  const [loadingStepIndex, setLoadingStepIndex] = useState(0);
+
+  useEffect(() => {
+    if (status !== 'loading') {
+      setLoadingStepIndex(0);
+      return;
+    }
+
+    setLoadingStepIndex(0);
+    const intervalId = setInterval(() => {
+      setLoadingStepIndex((current) => Math.min(current + 1, LOADING_STEPS.length - 1));
+    }, 1800);
+
+    return () => clearInterval(intervalId);
+  }, [status]);
 
   async function handleOptimize(cvFile, jobSource) {
     try {
@@ -131,6 +156,23 @@ export default function Optimizer() {
       <section className={status === 'success' && result ? 'workspace two-columns' : 'workspace'}>
         <aside className="workspace-main">
           <Uploader loading={status === 'loading'} onSubmit={handleOptimize} error={error} />
+          {status === 'loading' && (
+            <section className="panel loading-log fade-in" aria-live="polite" aria-busy="true">
+              <h3>Processando sua solicitação</h3>
+              <p className="panel-subtitle">{LOADING_STEPS[loadingStepIndex]}</p>
+              <ol className="loading-steps">
+                {LOADING_STEPS.map((step, index) => {
+                  const stepState = index < loadingStepIndex ? 'done' : index === loadingStepIndex ? 'active' : 'pending';
+                  return (
+                    <li key={step} className={`loading-step ${stepState}`}>
+                      <span className="loading-step-dot" aria-hidden="true" />
+                      <span>{step}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+          )}
         </aside>
 
         {status === 'success' && result && (
