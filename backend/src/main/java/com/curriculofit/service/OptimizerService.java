@@ -3,14 +3,20 @@ package com.curriculofit.service;
 import com.curriculofit.dto.FitAnalysis;
 import com.curriculofit.dto.OptimizeResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -19,6 +25,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -34,22 +41,67 @@ public class OptimizerService {
     private final JobFetcherService jobFetcherService;
     private final ObjectMapper objectMapper;
     private final Resource promptTemplateResource;
+    private final WebClient.Builder webClientBuilder;
+    private final String defaultApiKey;
+    private final String groqBaseUrl;
+    private final String groqModel;
+    private final int groqMaxTokens;
+    private final double groqTemperature;
 
+    @Autowired
     public OptimizerService(
             ChatClient chatClient,
             CvParserService cvParserService,
             JobFetcherService jobFetcherService,
             ObjectMapper objectMapper,
-            @Value("classpath:prompts/optimize.st") Resource promptTemplateResource
+            @Value("classpath:prompts/optimize.st") Resource promptTemplateResource,
+            WebClient.Builder webClientBuilder,
+            @Value("${spring.ai.openai.api-key:}") String defaultApiKey,
+            @Value("${spring.ai.openai.base-url:https://api.groq.com/openai}") String groqBaseUrl,
+            @Value("${spring.ai.openai.chat.options.model:llama-3.3-70b-versatile}") String groqModel,
+            @Value("${spring.ai.openai.chat.options.max-tokens:2200}") int groqMaxTokens,
+            @Value("${spring.ai.openai.chat.options.temperature:0.2}") double groqTemperature
     ) {
         this.chatClient = chatClient;
         this.cvParserService = cvParserService;
         this.jobFetcherService = jobFetcherService;
         this.objectMapper = objectMapper;
         this.promptTemplateResource = promptTemplateResource;
+        this.webClientBuilder = webClientBuilder;
+        this.defaultApiKey = defaultApiKey;
+        this.groqBaseUrl = groqBaseUrl;
+        this.groqModel = groqModel;
+        this.groqMaxTokens = groqMaxTokens;
+        this.groqTemperature = groqTemperature;
+    }
+
+    OptimizerService(
+            ChatClient chatClient,
+            CvParserService cvParserService,
+            JobFetcherService jobFetcherService,
+            ObjectMapper objectMapper,
+            Resource promptTemplateResource
+    ) {
+        this(
+                chatClient,
+                cvParserService,
+                jobFetcherService,
+                objectMapper,
+                promptTemplateResource,
+                WebClient.builder(),
+                "",
+                "https://api.groq.com/openai",
+                "llama-3.3-70b-versatile",
+                2200,
+                0.2
+        );
     }
 
     public OptimizeResponse optimize(MultipartFile cvFile, String jobSource) {
+        return optimize(cvFile, jobSource, null);
+    }
+
+    public OptimizeResponse optimize(MultipartFile cvFile, String jobSource, String userGroqApiKey) {
         log.info("Etapa 1/10 - Extraindo texto do currículo");
         String cvText = cvParserService.extract(cvFile);
 
@@ -67,7 +119,7 @@ public class OptimizerService {
         String prompt = template.replace("{cv}", normalizedCvText).replace("{vaga}", normalizedJobText);
 
         log.info("Etapa 5/10 - Chamando modelo Groq via Spring AI (OpenAI-compatible)");
-        String rawResponse = callModel(prompt);
+        String rawResponse = callModel(prompt, userGroqApiKey);
 
         log.info("Etapa 6/10 - Limpando possíveis markdown fences");
         OptimizeResponse initialResponse = enrichMissingAnalysis(parseOptimizeResponse(rawResponse));
@@ -84,7 +136,7 @@ public class OptimizerService {
             + "Entregue recomendações acionáveis e específicas para a vaga, sem frases genéricas.";
 
         try {
-            String retryRawResponse = callModel(strictPrompt);
+            String retryRawResponse = callModel(strictPrompt, userGroqApiKey);
             OptimizeResponse retryResponse = enrichMissingAnalysis(parseOptimizeResponse(retryRawResponse));
             if (!isLowQuality(retryResponse, normalizedCvText, normalizedJobText)) {
                 return retryResponse;
@@ -95,6 +147,15 @@ public class OptimizerService {
             log.warn("Falha na segunda tentativa de geração. Retornando primeira resposta válida.", ex);
             return initialResponse;
         }
+    }
+
+    public void validateGroqApiKey(String userGroqApiKey) {
+        String normalizedUserKey = normalizeOptionalUserApiKey(userGroqApiKey);
+        if (normalizedUserKey == null) {
+            throw new IllegalArgumentException("Informe uma API key Groq para validar.");
+        }
+
+        callGroqModelsEndpoint(normalizedUserKey);
     }
 
     private OptimizeResponse enrichMissingAnalysis(OptimizeResponse response) {
@@ -205,13 +266,26 @@ public class OptimizerService {
         return isBlank(value) ? fallback : value;
     }
 
-    private String callModel(String prompt) {
+    private String callModel(String prompt, String userGroqApiKey) {
         try {
+            String normalizedUserKey = normalizeOptionalUserApiKey(userGroqApiKey);
+            if (normalizedUserKey != null) {
+                return callGroqChatCompletion(prompt, normalizedUserKey);
+            }
+
+            if (isBlank(defaultApiKey)) {
+                throw new IllegalArgumentException("Falha ao chamar o provedor de IA. Verifique GROQ_API_KEY, limites do plano e disponibilidade do modelo.");
+            }
+
             return chatClient.prompt()
                     .user(Objects.requireNonNull(prompt))
                     .call()
                     .content();
         } catch (RuntimeException ex) {
+            if (ex instanceof IllegalArgumentException illegalArgumentException) {
+                throw illegalArgumentException;
+            }
+
             String providerMessage = ex.getMessage() == null ? "" : ex.getMessage();
             if (isGroqTokenLimitError(providerMessage)) {
                 log.error("Groq rejeitou a requisição por limite de tokens. charsPrompt={}, detalhe='{}'",
@@ -229,6 +303,100 @@ public class OptimizerService {
                     ex
             );
         }
+    }
+
+    private String callModel(String prompt) {
+        return callModel(prompt, null);
+    }
+
+    private String callGroqChatCompletion(String prompt, String apiKey) {
+        Map<String, Object> payload = Map.of(
+                "model", groqModel,
+                "max_tokens", groqMaxTokens,
+                "temperature", groqTemperature,
+                "messages", List.of(Map.of("role", "user", "content", Objects.requireNonNull(prompt)))
+        );
+
+        try {
+            JsonNode response = webClientBuilder.build()
+                    .post()
+                    .uri(buildGroqUrl("/v1/chat/completions"))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
+                    .bodyValue(payload)
+                    .retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .block();
+
+            if (response == null) {
+                throw new IllegalArgumentException("O provedor de IA retornou resposta vazia.");
+            }
+
+            String content = response.path("choices").path(0).path("message").path("content").asText("");
+            if (isBlank(content)) {
+                throw new IllegalArgumentException("O provedor de IA não retornou conteúdo na resposta.");
+            }
+
+            return content;
+        } catch (WebClientResponseException ex) {
+            throw mapGroqError(ex);
+        }
+    }
+
+    private void callGroqModelsEndpoint(String apiKey) {
+        try {
+            webClientBuilder.build()
+                    .get()
+                    .uri(buildGroqUrl("/v1/models"))
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
+                    .retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .block();
+        } catch (WebClientResponseException ex) {
+            throw mapGroqError(ex);
+        }
+    }
+
+    private RuntimeException mapGroqError(WebClientResponseException ex) {
+        int statusCode = ex.getStatusCode().value();
+        if (statusCode == 401 || statusCode == 403) {
+            return new IllegalArgumentException("API key Groq inválida ou sem permissão para o recurso.");
+        }
+        if (statusCode == 429) {
+            return new IllegalArgumentException("Limite de requisições/tokens da API Groq atingido. Tente novamente em instantes.");
+        }
+        if (statusCode >= 500) {
+            return new IllegalArgumentException("A Groq está indisponível no momento. Tente novamente em instantes.");
+        }
+        return new IllegalArgumentException("Falha ao comunicar com a Groq. Código HTTP: " + statusCode + ".");
+    }
+
+    private String normalizeOptionalUserApiKey(String userGroqApiKey) {
+        if (userGroqApiKey == null) {
+            return null;
+        }
+
+        String normalized = userGroqApiKey.trim();
+        if (normalized.isEmpty()) {
+            return null;
+        }
+
+        if (normalized.length() < 20) {
+            throw new IllegalArgumentException("API key Groq inválida.");
+        }
+
+        return normalized;
+    }
+
+    private String buildGroqUrl(String path) {
+        String normalizedBase = groqBaseUrl == null ? "" : groqBaseUrl.trim();
+        if (normalizedBase.endsWith("/")) {
+            normalizedBase = normalizedBase.substring(0, normalizedBase.length() - 1);
+        }
+        if (path.startsWith("/")) {
+            return normalizedBase + path;
+        }
+        return normalizedBase + "/" + path;
     }
 
     private OptimizeResponse parseOptimizeResponse(String rawResponse) {

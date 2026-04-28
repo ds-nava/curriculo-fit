@@ -6,7 +6,15 @@ const runtimeDefaultApiBaseUrl =
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL?.trim() || runtimeDefaultApiBaseUrl).replace(/\/$/, '');
 const REQUEST_TIMEOUT_MS = 60_000;
 
-export async function optimizeCv(cvFile, jobSource) {
+function buildGroqHeaders(groqApiKey) {
+  const normalizedKey = groqApiKey?.trim();
+  if (!normalizedKey) {
+    return undefined;
+  }
+  return { 'X-Groq-Api-Key': normalizedKey };
+}
+
+export async function optimizeCv(cvFile, jobSource, groqApiKey) {
   const formData = new FormData();
   formData.append('cvFile', cvFile);
   formData.append('jobSource', jobSource);
@@ -18,6 +26,7 @@ export async function optimizeCv(cvFile, jobSource) {
   try {
     response = await fetch(`${API_BASE_URL}/api/optimize`, {
       method: 'POST',
+      headers: buildGroqHeaders(groqApiKey),
       body: formData,
       signal: controller.signal
     });
@@ -29,6 +38,24 @@ export async function optimizeCv(cvFile, jobSource) {
   } finally {
     clearTimeout(timeoutId);
   }
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response));
+  }
+
+  return response.json();
+}
+
+export async function validateGroqKey(groqApiKey) {
+  const normalizedKey = groqApiKey?.trim();
+  if (!normalizedKey) {
+    throw new Error('Informe uma API key Groq para validar.');
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/keys/groq/validate`, {
+    method: 'POST',
+    headers: buildGroqHeaders(normalizedKey)
+  });
 
   if (!response.ok) {
     throw new Error(await readErrorMessage(response));

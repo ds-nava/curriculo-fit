@@ -14,6 +14,7 @@ import java.util.List;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -65,11 +66,12 @@ class OptimizerControllerTest {
                 )
         );
 
-        when(optimizerService.optimize(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString()))
+        when(optimizerService.optimize(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(response);
 
         mockMvc.perform(multipart("/api/optimize")
                         .file(cvFile)
+                        .header("X-Groq-Api-Key", "gsk_test_valid_key_1234567890")
                         .param("jobSource", "Descrição de vaga backend Java com Spring Boot"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cv_otimizado").value("# CV otimizado"))
@@ -94,7 +96,7 @@ class OptimizerControllerTest {
 
         String mensagem = "O Groq recusou a requisição por limite de tokens do plano atual. Tente novamente em instantes ou envie um CV/vaga menor.";
 
-        when(optimizerService.optimize(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString()))
+        when(optimizerService.optimize(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any()))
                 .thenThrow(new IllegalArgumentException(mensagem));
 
         mockMvc.perform(multipart("/api/optimize")
@@ -114,7 +116,7 @@ class OptimizerControllerTest {
                 "# CV".getBytes()
         );
 
-        when(optimizerService.optimize(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString()))
+        when(optimizerService.optimize(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any()))
                 .thenThrow(new IllegalArgumentException("O Groq recusou a requisição por limite de tokens do plano atual. Tente novamente em instantes ou envie um CV/vaga menor."));
 
         mockMvc.perform(multipart("/api/optimize")
@@ -122,5 +124,13 @@ class OptimizerControllerTest {
                         .param("jobSource", "Descrição de vaga backend Java com Spring Boot"))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.status").value(429));
+    }
+
+    @Test
+    void deveValidarApiKeyGroqQuandoHeaderForInformado() throws Exception {
+        mockMvc.perform(post("/api/keys/groq/validate")
+                        .header("X-Groq-Api-Key", "gsk_test_valid_key_1234567890"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(true));
     }
 }

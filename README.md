@@ -67,6 +67,15 @@ Variáveis principais:
 - `JOB_FETCHER_RETRY_MAX_ATTEMPTS`: tentativas totais para busca externa
 - `JOB_FETCHER_RETRY_BACKOFF_MS`: backoff inicial (ms) entre tentativas
 
+### BYOK (Bring Your Own Key)
+
+O frontend permite o usuário validar e usar a própria chave Groq durante a sessão.
+
+- A chave do usuário é mantida apenas em memória da aba.
+- Não é persistida em banco, arquivo, cookie ou storage.
+- Ao recarregar/fechar a aba, a chave é descartada.
+- Sem chave do usuário, o backend usa o fallback `GROQ_API_KEY`.
+
 Exemplo no PowerShell:
 
 ```powershell
@@ -147,6 +156,16 @@ Observacao: para validar integracao ponta a ponta, defina `USE_MOCK_DATA = false
 - Campos:
   - `cvFile`: arquivo PDF, MD ou TXT
   - `jobSource`: URL ou texto da vaga (minimo de 20 caracteres)
+- Header opcional:
+  - `X-Groq-Api-Key`: chave Groq do usuário para sobrescrever a chave padrão do servidor nesta requisição
+
+### POST `/api/keys/groq/validate`
+
+- Header obrigatório:
+  - `X-Groq-Api-Key`: chave Groq a ser validada
+- Resposta:
+  - `200` quando válida
+  - `400/429` quando inválida ou indisponível
 
 Resposta de sucesso (exemplo):
 

@@ -264,6 +264,48 @@ textarea:focus {
   margin-bottom: 0.7rem;
 }
 
+.success-box {
+  background: #f1fcf4;
+  border: 1px solid #b8e6c4;
+  color: var(--success);
+  border-radius: 6px;
+  padding: 0.7rem;
+  margin-bottom: 0.7rem;
+}
+
+.byok-panel {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.byok-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.byok-input {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid #c6ccd4;
+  padding: 0.72rem 0.9rem;
+  font-size: 0.95rem;
+  font-family: 'Source Sans 3', sans-serif;
+  background: #fff;
+}
+
+.byok-input:focus {
+  outline: 2px solid rgba(75, 85, 99, 0.18);
+  border-color: var(--brand);
+}
+
+.byok-actions {
+  display: inline-flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .tabs {
   display: flex;
   gap: 0.5rem;
@@ -440,6 +482,10 @@ textarea:focus {
   .results-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .byok-grid {
+    grid-template-columns: 1fr;
   }
 }
 
