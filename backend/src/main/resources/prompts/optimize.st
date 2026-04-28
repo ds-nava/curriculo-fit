@@ -32,16 +32,27 @@ CRITÉRIOS DE SCORE (0-100):
 QUALIDADE MÍNIMA:
 - resumo com no mínimo 90 caracteres e justificativa do score.
 - cv_otimizado completo em Markdown, sem placeholders e sem copiar literalmente o currículo original.
-- pontos_fortes, gaps_criticos, keywords_presentes, keywords_ausentes e recomendacoes com conteúdo concreto.
+- pontos_fortes: pelo menos 2 itens concretos.
+- gaps_criticos: pelo menos 2 itens concretos.
+- recomendacoes: pelo menos 3 ações específicas e executáveis.
+- keywords_presentes e keywords_ausentes: priorize 6 itens cada quando houver insumo suficiente (mínimo 4).
 - diagnostico_estrutural com decisão explícita e motivo.
 - cobertura_requisitos com status em: atende_parcial | atende_total | nao_atende.
 - cobertura_requisitos com confianca em: alta | media | baixa.
-- subscores coerentes com o score final e dentro dos limites definidos.
+- cobertura_requisitos com evidência textual objetiva e sem frases vagas.
+- subscores coerentes com o score final, dentro dos limites definidos e soma próxima ao score_compatibilidade.
 
 REGRAS ESTRUTURAIS:
 - Se diagnostico_estrutural.estrutura_atual_adequada for false, o cv_otimizado deve mudar a ordem das seções.
 - As duas primeiras seções do cv_otimizado devem priorizar os requisitos críticos da vaga.
 - Se houver pouca evidência para requisito crítico, explique isso em gaps_criticos e recomendacoes.
+
+AUTO-CHECAGEM ANTES DA SAÍDA (OBRIGATÓRIA):
+- Verifique se o JSON está válido e completo.
+- Verifique se o cv_otimizado não é cópia literal do currículo original.
+- Verifique se não adicionou tecnologias sem evidência no currículo.
+- Verifique se score e subscores são coerentes entre si.
+- Verifique se cobertura_requisitos contém requisito, status permitido, evidência e confiança permitida.
 
 Saída obrigatória: responda SOMENTE com JSON válido, sem markdown, sem comentários e sem texto fora do JSON.
 {
