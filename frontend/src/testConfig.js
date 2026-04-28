@@ -5,7 +5,7 @@
  * USE_MOCK_DATA = false → Chama a API real de IA (produção)
  */
 
-export const USE_MOCK_DATA = true; // ← MUDE AQUI PARA ALTERNAR!
+export const USE_MOCK_DATA = false; // ← MUDE AQUI PARA ALTERNAR!
 
 export const getMockDelay = () => {
   // Simula latência de rede (faz parecer mais realista)
