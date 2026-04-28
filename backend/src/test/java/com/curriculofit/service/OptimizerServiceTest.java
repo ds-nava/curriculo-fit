@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -45,7 +46,7 @@ class OptimizerServiceTest {
                 jobFetcherService,
                 new ObjectMapper(),
           new ByteArrayResource(
-            Objects.requireNonNull("CURRÍCULO ORIGINAL:\n{cv}\nDESCRIÇÃO DA VAGA:\n{vaga}".getBytes(StandardCharsets.UTF_8))
+            Objects.requireNonNull("SYSTEM PROMPT DE OTIMIZAÇÃO".getBytes(StandardCharsets.UTF_8))
           )
         );
     }
@@ -99,7 +100,9 @@ class OptimizerServiceTest {
 
         when(cvParserService.extract(cvFile)).thenReturn("Currículo base");
         when(jobFetcherService.fetch("vaga")).thenReturn("Vaga backend Java");
-        when(chatClient.prompt().user("CURRÍCULO ORIGINAL:\nCurrículo base\nDESCRIÇÃO DA VAGA:\nVaga backend Java").call().content())
+        when(chatClient.prompt().system(anyString())
+                .user(anyString())
+                .call().content())
           .thenReturn(json);
 
         OptimizeResponse response = optimizerService.optimize(cvFile, "vaga");
@@ -115,7 +118,10 @@ class OptimizerServiceTest {
 
         when(cvParserService.extract(cvFile)).thenReturn("Currículo base");
         when(jobFetcherService.fetch("vaga")).thenReturn("Vaga backend Java");
-        when(chatClient.prompt().user("CURRÍCULO ORIGINAL:\nCurrículo base\nDESCRIÇÃO DA VAGA:\nVaga backend Java").call().content()).thenReturn("{ json quebrado }");
+        when(chatClient.prompt().system(anyString())
+                .user(anyString())
+                .call().content()).thenReturn("{ json quebrado }");
+        when(chatClient.prompt().user(anyString()).call().content()).thenReturn("{ json ainda quebrado }");
 
       IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> optimizerService.optimize(cvFile, "vaga"));
 
@@ -143,7 +149,9 @@ class OptimizerServiceTest {
 
         when(cvParserService.extract(cvFile)).thenReturn("Currículo base");
         when(jobFetcherService.fetch("vaga")).thenReturn("Vaga backend Java");
-        when(chatClient.prompt().user("CURRÍCULO ORIGINAL:\nCurrículo base\nDESCRIÇÃO DA VAGA:\nVaga backend Java").call().content())
+        when(chatClient.prompt().system(anyString())
+                .user(anyString())
+                .call().content())
                 .thenReturn(legacyJson);
 
         OptimizeResponse response = optimizerService.optimize(cvFile, "vaga");

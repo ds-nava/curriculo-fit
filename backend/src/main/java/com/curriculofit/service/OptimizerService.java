@@ -89,7 +89,7 @@ public class OptimizerService {
                 objectMapper,
                 promptTemplateResource,
                 WebClient.builder(),
-                "",
+                "test-api-key",
                 "https://api.groq.com/openai",
                 "llama-3.3-70b-versatile",
                 2200,
@@ -112,14 +112,14 @@ public class OptimizerService {
         String normalizedCvText = limitTextForPrompt(cvText, MAX_CV_CHARS, "currículo");
         String normalizedJobText = limitTextForPrompt(jobText, MAX_JOB_CHARS, "vaga");
 
-        log.info("Etapa 3/10 - Lendo template do prompt");
-        String template = loadPromptTemplate();
+        log.info("Etapa 3/10 - Lendo instruções de sistema do prompt");
+        String systemPrompt = loadPromptTemplate();
 
-        log.info("Etapa 4/10 - Interpolando dados no prompt");
-        String prompt = template.replace("{cv}", normalizedCvText).replace("{vaga}", normalizedJobText);
+        log.info("Etapa 4/10 - Montando mensagem de usuário com CV e vaga");
+        String userPrompt = buildOptimizationUserPrompt(normalizedCvText, normalizedJobText, false);
 
         log.info("Etapa 5/10 - Chamando modelo Groq via Spring AI (OpenAI-compatible)");
-        String rawResponse = callModel(prompt, userGroqApiKey);
+        String rawResponse = callModel(systemPrompt, userPrompt, userGroqApiKey);
 
         log.info("Etapa 6/10 - Limpando possíveis markdown fences");
         OptimizeResponse initialResponse = enrichMissingAnalysis(parseOptimizeResponse(rawResponse));
@@ -129,14 +129,10 @@ public class OptimizerService {
         }
 
         log.warn("Etapa 7/10 - Primeira resposta considerada rasa. Executando segunda tentativa com instruções rigorosas");
-        String strictPrompt = prompt + "\n\n"
-            + "MODO RIGOROSO (OBRIGATÓRIO): reescreva a resposta inteira com maior profundidade, mantendo apenas fatos presentes no currículo. "
-            + "É proibido retornar o cv_otimizado igual ou quase igual ao currículo original. "
-            + "Faça mudanças perceptíveis de estrutura e conteúdo para aderência à vaga: reordene seções, reescreva bullets com foco em impacto e destaque os itens mais relevantes no topo. "
-            + "Entregue recomendações acionáveis e específicas para a vaga, sem frases genéricas.";
+        String strictUserPrompt = buildOptimizationUserPrompt(normalizedCvText, normalizedJobText, true);
 
         try {
-            String retryRawResponse = callModel(strictPrompt, userGroqApiKey);
+            String retryRawResponse = callModel(systemPrompt, strictUserPrompt, userGroqApiKey);
             OptimizeResponse retryResponse = enrichMissingAnalysis(parseOptimizeResponse(retryRawResponse));
             if (!isLowQuality(retryResponse, normalizedCvText, normalizedJobText)) {
                 return retryResponse;
@@ -266,19 +262,24 @@ public class OptimizerService {
         return isBlank(value) ? fallback : value;
     }
 
-    private String callModel(String prompt, String userGroqApiKey) {
+    private String callModel(String systemPrompt, String userPrompt, String userGroqApiKey) {
         try {
             String normalizedUserKey = normalizeOptionalUserApiKey(userGroqApiKey);
             if (normalizedUserKey != null) {
-                return callGroqChatCompletion(prompt, normalizedUserKey);
+                return callGroqChatCompletion(systemPrompt, userPrompt, normalizedUserKey);
             }
 
             if (isBlank(defaultApiKey)) {
                 throw new IllegalArgumentException("Falha ao chamar o provedor de IA. Verifique GROQ_API_KEY, limites do plano e disponibilidade do modelo.");
             }
 
-            return chatClient.prompt()
-                    .user(Objects.requireNonNull(prompt))
+            var promptCall = chatClient.prompt();
+            if (!isBlank(systemPrompt)) {
+                promptCall = promptCall.system(systemPrompt);
+            }
+
+            return promptCall
+                    .user(Objects.requireNonNull(userPrompt))
                     .call()
                     .content();
         } catch (RuntimeException ex) {
@@ -289,7 +290,7 @@ public class OptimizerService {
             String providerMessage = ex.getMessage() == null ? "" : ex.getMessage();
             if (isGroqTokenLimitError(providerMessage)) {
                 log.error("Groq rejeitou a requisição por limite de tokens. charsPrompt={}, detalhe='{}'",
-                        prompt.length(), providerMessage, ex);
+                        safeLength(systemPrompt) + safeLength(userPrompt), providerMessage, ex);
                 throw new IllegalArgumentException(
                         "O Groq recusou a requisição por limite de tokens do plano atual. Tente novamente em instantes ou envie um CV/vaga menor.",
                         ex
@@ -297,7 +298,7 @@ public class OptimizerService {
             }
 
             log.error("Falha ao chamar Groq. charsPrompt={}, detalhe='{}'",
-                    prompt.length(), providerMessage, ex);
+                    safeLength(systemPrompt) + safeLength(userPrompt), providerMessage, ex);
             throw new IllegalArgumentException(
                     "Falha ao chamar o provedor de IA. Verifique GROQ_API_KEY, limites do plano e disponibilidade do modelo.",
                     ex
@@ -305,16 +306,26 @@ public class OptimizerService {
         }
     }
 
-    private String callModel(String prompt) {
-        return callModel(prompt, null);
+    private String callModel(String prompt, String userGroqApiKey) {
+        return callModel(null, prompt, userGroqApiKey);
     }
 
-    private String callGroqChatCompletion(String prompt, String apiKey) {
+    private String callModel(String prompt) {
+        return callModel(null, prompt, null);
+    }
+
+    private String callGroqChatCompletion(String systemPrompt, String userPrompt, String apiKey) {
+        List<Map<String, String>> messages = new ArrayList<>();
+        if (!isBlank(systemPrompt)) {
+            messages.add(Map.of("role", "system", "content", systemPrompt.trim()));
+        }
+        messages.add(Map.of("role", "user", "content", Objects.requireNonNull(userPrompt)));
+
         Map<String, Object> payload = Map.of(
                 "model", groqModel,
                 "max_tokens", groqMaxTokens,
                 "temperature", groqTemperature,
-                "messages", List.of(Map.of("role", "user", "content", Objects.requireNonNull(prompt)))
+                "messages", messages
         );
 
         try {
@@ -488,7 +499,7 @@ public class OptimizerService {
             return true;
         }
 
-        if (isBlank(analise.resumo()) || analise.resumo().trim().length() < 80) {
+        if (isBlank(analise.resumo()) || analise.resumo().trim().length() < 90) {
             return true;
         }
 
@@ -692,6 +703,27 @@ public class OptimizerService {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private int safeLength(String value) {
+        return value == null ? 0 : value.length();
+    }
+
+    private String buildOptimizationUserPrompt(String cvText, String jobText, boolean strictMode) {
+        String basePrompt = "CURRÍCULO ORIGINAL:\n"
+                + cvText
+                + "\n\nDESCRIÇÃO DA VAGA:\n"
+                + jobText;
+
+        if (!strictMode) {
+            return basePrompt;
+        }
+
+        return basePrompt + "\n\n"
+                + "MODO RIGOROSO (OBRIGATÓRIO): reescreva a resposta inteira com maior profundidade, mantendo apenas fatos presentes no currículo. "
+                + "É proibido retornar o cv_otimizado igual ou quase igual ao currículo original. "
+                + "Faça mudanças perceptíveis de estrutura e conteúdo para aderência à vaga: reordene seções, reescreva bullets com foco em impacto e destaque os itens mais relevantes no topo. "
+                + "Entregue recomendações acionáveis e específicas para a vaga, sem frases genéricas.";
     }
 
     private String loadPromptTemplate() {
