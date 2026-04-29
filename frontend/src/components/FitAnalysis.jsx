@@ -49,13 +49,6 @@ export default function FitAnalysis({ analise }) {
   const subscores = analise?.subscores;
   const radarData = formatSubscoresToRadarData(subscores);
   const recomendacoesDiretas = (analise?.recomendacoes || []).filter(Boolean);
-  const diagnostico = analise?.diagnostico_estrutural;
-  const estruturaAtual = diagnostico?.estrutura_atual_adequada === true
-    ? 'Adequada'
-    : diagnostico?.estrutura_atual_adequada === false
-      ? 'Nao adequada'
-      : 'Nao informada';
-
   const cobertura = analise?.cobertura_requisitos || [];
   const coberturaRelevante = cobertura.slice(0, 3);
 
@@ -166,59 +159,34 @@ export default function FitAnalysis({ analise }) {
           {recomendacoesDiretas.length > 0 && (
             <div className="recommendation-block">
               <h5>Plano de Ação</h5>
-              <ol>
+              <ul className="bullet-list">
                 {recomendacoesDiretas.map((item, index) => <li key={`rc-${index}-${item}`}>{item}</li>)}
-              </ol>
-            </div>
-          )}
-
-          {diagnostico && (
-            <div className="recommendation-block diagnostic">
-              <h5>Diagnóstico Estrutural</h5>
-              <p><strong>Estrutura atual:</strong> <span style={
-                diagnostico?.estrutura_atual_adequada === true 
-                  ? { color: 'var(--success)', fontWeight: 500 }
-                  : diagnostico?.estrutura_atual_adequada === false
-                    ? { color: 'var(--danger)', fontWeight: 500 }
-                    : {}
-              }>{estruturaAtual}</span></p>
-              {diagnostico?.motivo_estrutural && <p>{diagnostico.motivo_estrutural}</p>}
-
-              {(diagnostico?.secoes_a_reordenar || []).length > 0 && (
-                <p><strong>Reordenar:</strong> {diagnostico.secoes_a_reordenar.join(', ')}</p>
-              )}
-              {(diagnostico?.secoes_a_comprimir || []).length > 0 && (
-                <p><strong>Comprimir:</strong> {diagnostico.secoes_a_comprimir.join(', ')}</p>
-              )}
-              {(diagnostico?.secoes_a_expandir || []).length > 0 && (
-                <p><strong>Expandir:</strong> {diagnostico.secoes_a_expandir.join(', ')}</p>
-              )}
-              {(diagnostico?.novo_outline_sugerido || []).length > 0 && (
-                <p><strong>Novo outline:</strong> {diagnostico.novo_outline_sugerido.join(' > ')}</p>
-              )}
+              </ul>
             </div>
           )}
 
           {coberturaRelevante.length > 0 && (
             <div className="recommendation-block cobertura">
-              <h5>Cobertura dos Requisitos (Top 3)</h5>
-              <div>
+              <h5>Cobertura dos Requisitos</h5>
+              <ul className="bullet-list requirements-list">
                 {coberturaRelevante.map((item, index) => (
-                  <div key={`cv-${index}-${item?.requisito || 'req'}`} className="requirement-item">
-                    <div className="requirement-header">
-                      <span className="requirement-title">{item?.requisito || 'Requisito nao identificado'}</span>
-                      <span className={`requirement-status ${item?.status === 'atende_total' ? 'total' : item?.status === 'atende_parcial' ? 'parcial' : 'nao-atende'}`}>
-                        {statusLabel(item?.status)}
-                      </span>
+                  <li key={`cv-${index}-${item?.requisito || 'req'}`} className="requirement-item">
+                    <div className="requirement-content">
+                      <div className="requirement-header">
+                        <span className="requirement-title">{item?.requisito || 'Requisito nao identificado'}</span>
+                        <span className={`requirement-status ${item?.status === 'atende_total' ? 'total' : item?.status === 'atende_parcial' ? 'parcial' : 'nao-atende'}`}>
+                          {statusLabel(item?.status)}
+                        </span>
+                      </div>
+                      <p className="requirement-evidence"><strong>Evidência:</strong> {item?.evidencia_curriculo || 'Nao identificada'}</p>
                     </div>
-                    <p className="requirement-evidence">{item?.evidencia_curriculo || 'Evidencia nao informada'}</p>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           )}
 
-          {recomendacoesDiretas.length === 0 && !diagnostico && coberturaRelevante.length === 0 && (
+          {recomendacoesDiretas.length === 0 && coberturaRelevante.length === 0 && (
             <div className="no-recommendations">
               <p>Sem recomendações disponíveis.</p>
             </div>
