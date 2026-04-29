@@ -2,6 +2,8 @@
 
 Aplicação fullstack para otimizar currículos com IA, com foco em aderência a uma vaga específica e geração de análise objetiva de compatibilidade.
 
+[![Licença: MIT](https://img.shields.io/badge/Licen%C3%A7a-MIT-green.svg)](./LICENSE)
+
 ## Visão geral
 
 O sistema recebe:
@@ -172,5 +174,10 @@ curriculo-fit/
 |-- backend/
 |-- frontend/
 |-- docker-compose.yml
+|-- LICENSE
 `-- README.md
 ```
+
+## Licença
+
+Este projeto está licenciado sob os termos da **MIT License**. Consulte o arquivo [LICENSE](./LICENSE).
