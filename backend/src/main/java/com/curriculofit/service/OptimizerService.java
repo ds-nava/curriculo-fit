@@ -325,6 +325,7 @@ public class OptimizerService {
                 "model", groqModel,
                 "max_tokens", groqMaxTokens,
                 "temperature", groqTemperature,
+                "response_format", Map.of("type", "json_object"),
                 "messages", messages
         );
 

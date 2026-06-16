@@ -11,6 +11,8 @@ spring:
           model: llama-3.3-70b-versatile
           max-tokens: 2200
           temperature: 0.2
+          response-format:
+            type: json_object
 
   servlet:
     multipart:
