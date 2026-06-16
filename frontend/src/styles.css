@@ -958,3 +958,137 @@ textarea:focus {
   color: var(--muted);
   font-size: 0.9rem;
 }
+
+/* Agrupador de Ações */
+.actions-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Estilos de Impressão e Exportação para PDF */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: 'Source Sans 3', 'Segoe UI', Calibri, sans-serif !important;
+  }
+
+  /* Ocultar elementos desnecessários para a impressão do currículo */
+  .app-hero,
+  .byok-panel,
+  .uploader,
+  .loading-log,
+  .results-header,
+  .tabs,
+  .panel-header,
+  .ghost-button,
+  .primary-button,
+  .test-badge,
+  footer {
+    display: none !important;
+  }
+
+  /* Ajustar estrutura para ocupar toda a largura da página */
+  .app-shell {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    display: block !important;
+  }
+
+  .workspace {
+    display: block !important;
+    gap: 0 !important;
+  }
+
+  .workspace-main {
+    display: none !important;
+  }
+
+  .panel.results {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+
+  /* Estilizar a seção do currículo otimizado */
+  .cv-preview {
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    max-height: none !important; /* Exibe todo o conteúdo sem barra de rolagem */
+    overflow: visible !important;
+  }
+
+  /* Mudar a fonte mono (usada na edição) para uma fonte profissional de currículo */
+  .cv-preview.mono {
+    font-family: 'Source Sans 3', 'Segoe UI', Calibri, sans-serif !important;
+    font-size: 11.5pt !important;
+    line-height: 1.6 !important;
+    color: #2b303b !important;
+  }
+
+  /* Formatação de títulos e espaçamentos no PDF */
+  .cv-preview h1 {
+    font-family: 'Merriweather', Georgia, serif !important;
+    font-size: 20pt !important;
+    text-align: center !important;
+    margin-top: 0 !important;
+    margin-bottom: 6pt !important;
+    border-bottom: 2px solid #2b303b !important;
+    padding-bottom: 6pt !important;
+  }
+
+  .cv-preview h2 {
+    font-family: 'Merriweather', Georgia, serif !important;
+    font-size: 14pt !important;
+    margin-top: 18pt !important;
+    margin-bottom: 8pt !important;
+    border-bottom: 1px solid #7c8594 !important;
+    padding-bottom: 4pt !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  .cv-preview h3 {
+    font-size: 12pt !important;
+    margin-top: 12pt !important;
+    margin-bottom: 6pt !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  .cv-preview p,
+  .cv-preview li {
+    font-size: 10.5pt !important;
+    margin-bottom: 6pt !important;
+    color: #3f4752 !important;
+  }
+
+  .cv-preview ul {
+    margin-top: 6pt !important;
+    margin-bottom: 6pt !important;
+    padding-left: 20px !important;
+  }
+
+  /* Controle de quebras de página */
+  .cv-preview h1,
+  .cv-preview h2,
+  .cv-preview h3 {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  .cv-preview p,
+  .cv-preview li,
+  .cv-preview blockquote {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}

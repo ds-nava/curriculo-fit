@@ -10,6 +10,10 @@ export default function CVPreview({ cvOtimizado }) {
     window.setTimeout(() => setCopied(false), 1500);
   }
 
+  function handlePrint() {
+    window.print();
+  }
+
   return (
     <section className="panel fade-in">
       <div className="panel-header">
@@ -17,9 +21,14 @@ export default function CVPreview({ cvOtimizado }) {
           <h3>Currículo Otimizado</h3>
           <p className="panel-subtitle">Visualização em Markdown pronta para edição final.</p>
         </div>
-        <button type="button" className="ghost-button" onClick={handleCopy}>
-          {copied ? 'Copiado' : 'Copiar Markdown'}
-        </button>
+        <div className="actions-group">
+          <button type="button" className="ghost-button" onClick={handleCopy}>
+            {copied ? 'Copiado' : 'Copiar Markdown'}
+          </button>
+          <button type="button" className="primary-button" onClick={handlePrint}>
+            Salvar em PDF / Imprimir
+          </button>
+        </div>
       </div>
 
       <article className="cv-preview mono">

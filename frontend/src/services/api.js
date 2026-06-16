@@ -1,5 +1,8 @@
 const runtimeDefaultApiBaseUrl =
-  window.location.hostname === 'localhost'
+  import.meta.env.DEV ||
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1' ||
+  window.location.hostname === '[::1]'
     ? 'http://localhost:8080'
     : window.location.origin;
 
