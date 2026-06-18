@@ -16,19 +16,31 @@ E retorna:
 
 ## Arquitetura
 
-```text
-Frontend (React/Vite)
-   -> POST /api/optimize (multipart: cvFile + jobSource)
-Backend (Spring Boot)
-   -> CvParserService (extração de texto do currículo)
-   -> JobFetcherService (texto da vaga)
-   -> OptimizerService (prompt + chamada Groq)
-Groq (OpenAI-compatible)
-   -> resposta JSON
-Backend
-   -> normalização/validação da resposta
-Frontend
-   -> CVPreview + FitAnalysis
+```mermaid
+flowchart TD
+    User([Usuário]) -->|Envia CV + Link/Texto da Vaga| Front[Frontend: React / Vite]
+    Front -->|1. POST /api/optimize com Provedor| Back[Backend: Spring Boot]
+    
+    subgraph Processamento
+        Back --> Parser[CvParserService: Extração de PDF/Text]
+        Back --> Fetcher[JobFetcherService: Scraping da Vaga]
+    end
+    
+    Parser -->|Texto do CV| Opt[OptimizerService: Orquestrador]
+    Fetcher -->|Texto da Vaga| Opt
+    
+    subgraph Inteligência Artificial
+        Opt --> Choice{Qual Provedor?}
+        Choice -->|gemini| Gemini[API Google Gemini: Chamada Nativa]
+        Choice -->|groq| Groq[API Groq: Chamada Direta]
+    end
+    
+    Gemini & Groq -->|JSON Cru| Validate{Valida & Re-tenta}
+    Validate -->|Parse OK| Response[Retorna JSON de Otimização]
+    Validate -->|Erro de Parse| Repair[Reparo Automático via Prompt de Correção]
+    Repair --> Response
+    
+    Response -->|Exibe Análise + Gráficos + Markdown| Front
 ```
 
 ## Stack
@@ -49,9 +61,18 @@ Frontend
 
 Use `.env.example` como base.
 
+> [!IMPORTANT]
+> **Atenção sobre os arquivos de ambiente local (`.env`):**
+> O projeto utiliza **dois** arquivos `.env` sincronizados para rodar localmente. Certifique-se de copiar as suas configurações para ambos os locais:
+> 1. Na **raiz do projeto** (`/.env`): Usado pelo Docker Compose e pelo build do Frontend.
+> 2. Dentro de **`backend/`** (`/backend/.env`): Usado pelo Spring Boot (`spring-dotenv`) ao rodar via `mvn spring-boot:run`.
+
 | Variável | Obrigatória | Descrição |
 |---|---|---|
-| `GROQ_API_KEY` | Sim (sem BYOK) | Chave padrão do backend para chamadas à IA |
+| `GEMINI_API_KEY` | Sim | Chave de API do Google Gemini (obtida no Google AI Studio) |
+| `GROQ_API_KEY` | Sim | Chave de API do Groq |
+| `GEMINI_MODEL` | Não | Nome do modelo do Gemini (Padrão: `gemini-2.5-flash`) |
+| `GROQ_MODEL` | Não | Nome do modelo do Groq (Padrão: `llama-3.3-70b-versatile`) |
 | `CORS_ALLOWED_ORIGINS` | Sim em produção | Origens permitidas no backend (separadas por vírgula) |
 | `VITE_API_BASE_URL` | Sim em produção | URL pública do backend usada no build do frontend |
 | `RATE_LIMIT_ENABLED` | Não | Ativa/desativa rate limit no `POST /api/optimize` |
@@ -59,14 +80,6 @@ Use `.env.example` como base.
 | `JOB_FETCHER_TIMEOUT_SECONDS` | Não | Timeout para leitura de vaga por URL |
 | `JOB_FETCHER_RETRY_MAX_ATTEMPTS` | Não | Tentativas de retry para busca externa |
 | `JOB_FETCHER_RETRY_BACKOFF_MS` | Não | Backoff inicial (ms) entre tentativas |
-
-### BYOK (Bring Your Own Key)
-
-O frontend permite validar e usar uma chave Groq do usuário:
-- enviada via header `X-Groq-Api-Key`
-- mantida apenas em memória da aba
-- não persistida em banco, storage, cookie ou arquivo
-- se ausente, o backend usa `GROQ_API_KEY`
 
 ## Execução local (sem Docker)
 
@@ -89,7 +102,8 @@ npm run dev
 ## Execução com Docker
 
 ```powershell
-$env:GROQ_API_KEY="sua-chave"
+$env:GEMINI_API_KEY="sua-chave-gemini"
+$env:GROQ_API_KEY="sua-chave-groq"
 $env:CORS_ALLOWED_ORIGINS="http://localhost:5173,http://localhost:5174,http://localhost"
 docker compose up --build
 ```
@@ -121,13 +135,10 @@ Arquivo de controle: `frontend/src/testConfig.js`
 ### `POST /api/optimize`
 
 - **Content-Type:** `multipart/form-data`
-- **Campos:** `cvFile`, `jobSource` (mínimo 20 caracteres)
-- **Header opcional:** `X-Groq-Api-Key`
-
-### `POST /api/keys/groq/validate`
-
-- **Header obrigatório:** `X-Groq-Api-Key`
-- **Retornos típicos:** `200`, `400`, `429`
+- **Campos:**
+  - `cvFile`: Arquivo do currículo (`PDF`, `MD` ou `TXT`)
+  - `jobSource`: Texto ou URL da vaga (mínimo 20 caracteres)
+  - `provider`: Provedor a ser utilizado (`gemini` ou `groq`, padrão: `gemini`)
 
 ### Exemplo de resposta de sucesso
 
@@ -158,14 +169,14 @@ mvn test
 ## Troubleshooting rápido
 
 - **Erro:** "Falha ao chamar o provedor de IA..."
-  - valide `GROQ_API_KEY` no ambiente do backend
-  - confirme disponibilidade/permissão do modelo configurado
-  - teste BYOK via `POST /api/keys/groq/validate`
+  - Valide se `GEMINI_API_KEY` e `GROQ_API_KEY` estão configurados corretamente no ambiente do backend (`.env` ou Render).
+  - Confirme a disponibilidade do modelo e permissão da chave utilizada.
+  - Para o Gemini, verifique se a cota da chave gratuita do AI Studio não foi excedida (erro 429).
 - **Erro 405 no frontend publicado**
-  - revise `VITE_API_BASE_URL` no build
-  - confirme que o request está indo para o backend, não para o host do frontend
+  - Revise `VITE_API_BASE_URL` no build do frontend.
+  - Confirme que a requisição HTTP está indo para o backend, e não para o host do frontend.
 - **Erro de CORS**
-  - ajuste `CORS_ALLOWED_ORIGINS` com o domínio real do frontend publicado
+  - Ajuste `CORS_ALLOWED_ORIGINS` com o domínio real do frontend publicado (ex: `https://curriculofit.vercel.app/`).
 
 ## Estrutura do projeto
 
