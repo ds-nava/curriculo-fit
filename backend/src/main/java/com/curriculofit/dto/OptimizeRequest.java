@@ -11,6 +11,8 @@ public record OptimizeRequest(
 
         @NotBlank(message = "A vaga (URL ou texto) é obrigatória")
         @Size(min = 20, message = "A descrição da vaga deve ter ao menos 20 caracteres")
-        String jobSource
+        String jobSource,
+
+        String provider
 ) {
 }

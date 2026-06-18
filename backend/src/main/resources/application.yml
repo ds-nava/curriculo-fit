@@ -4,12 +4,12 @@ server:
 spring:
   ai:
     openai:
-      api-key: ${GROQ_API_KEY}
-      base-url: https://api.groq.com/openai
+      api-key: ${SPRING_AI_OPENAI_API_KEY:${GROQ_API_KEY}}
+      base-url: ${SPRING_AI_OPENAI_BASE_URL:https://api.groq.com/openai}
       chat:
         options:
-          model: llama-3.3-70b-versatile
-          max-tokens: 2200
+          model: ${SPRING_AI_OPENAI_CHAT_OPTIONS_MODEL:llama-3.3-70b-versatile}
+          max-tokens: ${SPRING_AI_OPENAI_CHAT_OPTIONS_MAX_TOKENS:4000}
           temperature: 0.2
           response-format:
             type: json_object
@@ -47,3 +47,9 @@ management:
     web:
       exposure:
         include: health
+
+api:
+  gemini-key: ${GEMINI_API_KEY:${SPRING_AI_OPENAI_API_KEY:}}
+  groq-key: ${GROQ_API_KEY:}
+  gemini-model: ${GEMINI_MODEL:gemini-2.5-flash}
+  groq-model: ${GROQ_MODEL:llama-3.3-70b-versatile}

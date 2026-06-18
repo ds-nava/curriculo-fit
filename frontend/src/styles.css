@@ -273,37 +273,66 @@ textarea:focus {
   margin-bottom: 0.7rem;
 }
 
-.byok-panel {
-  display: grid;
-  gap: 0.8rem;
-}
-
-.byok-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.6rem;
-  align-items: center;
-}
-
-.byok-input {
-  width: 100%;
-  border-radius: 6px;
-  border: 1px solid #c6ccd4;
-  padding: 0.72rem 0.9rem;
-  font-size: 0.95rem;
-  font-family: 'Source Sans 3', sans-serif;
-  background: #fff;
-}
-
-.byok-input:focus {
-  outline: 2px solid rgba(75, 85, 99, 0.18);
-  border-color: var(--brand);
-}
-
-.byok-actions {
-  display: inline-flex;
+.provider-selector-panel {
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  margin-bottom: 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1rem 1.05rem;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+}
+
+.provider-selector-header {
+  display: flex;
+  flex-direction: column;
+}
+
+.provider-selector-header h3 {
+  margin: 0 0 0.2rem;
+  font-family: 'Merriweather', Georgia, serif;
+  font-size: 1rem;
+}
+
+.provider-selector-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.provider-toggle-group {
+  display: flex;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.2rem;
+  width: fit-content;
+  margin-top: 0.6rem;
+}
+
+.provider-toggle-button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0.45rem 1.1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.provider-toggle-button:hover {
+  color: var(--ink);
+}
+
+.provider-toggle-button.active {
+  background: var(--surface);
+  color: var(--brand-strong);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+  border-color: var(--line);
 }
 
 .tabs {
@@ -539,9 +568,6 @@ textarea:focus {
     align-items: flex-start;
   }
 
-  .byok-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .radar-container {
@@ -976,7 +1002,7 @@ textarea:focus {
 
   /* Ocultar elementos desnecessários para a impressão do currículo */
   .app-hero,
-  .byok-panel,
+  .provider-selector-panel,
   .uploader,
   .loading-log,
   .results-header,

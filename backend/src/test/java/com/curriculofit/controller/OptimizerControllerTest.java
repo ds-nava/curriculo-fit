@@ -71,8 +71,8 @@ class OptimizerControllerTest {
 
         mockMvc.perform(multipart("/api/optimize")
                         .file(cvFile)
-                        .header("X-Groq-Api-Key", "gsk_test_valid_key_1234567890")
-                        .param("jobSource", "Descrição de vaga backend Java com Spring Boot"))
+                        .param("jobSource", "Descrição de vaga backend Java com Spring Boot")
+                        .param("provider", "gemini"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cv_otimizado").value("# CV otimizado"))
                 .andExpect(jsonPath("$.analise.score_compatibilidade").value(75));
@@ -124,13 +124,5 @@ class OptimizerControllerTest {
                         .param("jobSource", "Descrição de vaga backend Java com Spring Boot"))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.status").value(429));
-    }
-
-    @Test
-    void deveValidarApiKeyGroqQuandoHeaderForInformado() throws Exception {
-        mockMvc.perform(post("/api/keys/groq/validate")
-                        .header("X-Groq-Api-Key", "gsk_test_valid_key_1234567890"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.valid").value(true));
     }
 }

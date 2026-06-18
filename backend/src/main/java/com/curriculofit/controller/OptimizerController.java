@@ -30,23 +30,16 @@ public class OptimizerController {
 
     @PostMapping(value = "/optimize", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<OptimizeResponse> optimize(
-            @Valid @ModelAttribute OptimizeRequest request,
-            @RequestHeader(value = "X-Groq-Api-Key", required = false) String userGroqApiKey
+            @Valid @ModelAttribute OptimizeRequest request
     ) {
         log.info("Recebida requisição de otimização de currículo");
 
-        OptimizeResponse response = optimizerService.optimize(request.cvFile(), request.jobSource(), userGroqApiKey);
+        String provider = request.provider();
+        if (provider == null || provider.trim().isEmpty()) {
+            provider = "gemini";
+        }
+
+        OptimizeResponse response = optimizerService.optimize(request.cvFile(), request.jobSource(), provider.trim().toLowerCase());
         return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/keys/groq/validate")
-    public ResponseEntity<KeyValidationResponse> validateGroqApiKey(
-            @RequestHeader(value = "X-Groq-Api-Key", required = false) String userGroqApiKey
-    ) {
-        optimizerService.validateGroqApiKey(userGroqApiKey);
-        return ResponseEntity.ok(new KeyValidationResponse(true, "Chave Groq válida."));
-    }
-
-    public record KeyValidationResponse(boolean valid, String message) {
     }
 }

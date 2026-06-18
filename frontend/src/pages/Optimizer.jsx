@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Uploader from '../components/Uploader';
 import CVPreview from '../components/CVPreview';
 import FitAnalysis from '../components/FitAnalysis';
-import { optimizeCv, validateGroqKey } from '../services/api';
+import { optimizeCv } from '../services/api';
 import { USE_MOCK_DATA, getMockDelay } from '../testConfig';
 import { mockAnalysisResponse } from '../mockData';
 
@@ -21,10 +21,7 @@ export default function Optimizer() {
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
   const [activeTab, setActiveTab] = useState('curriculo');
-  const [keyInput, setKeyInput] = useState('');
-  const [activeUserKey, setActiveUserKey] = useState('');
-  const [keyStatus, setKeyStatus] = useState('idle');
-  const [keyFeedback, setKeyFeedback] = useState('');
+  const [provider, setProvider] = useState('gemini');
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
 
   useEffect(() => {
@@ -54,8 +51,8 @@ export default function Optimizer() {
         data = mockAnalysisResponse;
       } else {
         // Modo PRODUÇÃO: chama a API real
-        console.log('🚀 MODO PRODUÇÃO: Chamando API de IA');
-        data = await optimizeCv(cvFile, jobSource, activeUserKey);
+        console.log(`🚀 MODO PRODUÇÃO: Chamando API de IA usando provedor: ${provider}`);
+        data = await optimizeCv(cvFile, jobSource, provider);
       }
       
       setResult(data);
@@ -65,42 +62,6 @@ export default function Optimizer() {
       setStatus('error');
       setError(err.message || 'Falha ao otimizar currículo.');
     }
-  }
-
-  async function handleValidateKey() {
-    try {
-      setKeyStatus('loading');
-      setKeyFeedback('');
-
-      const normalizedKey = keyInput.trim();
-      if (!normalizedKey) {
-        setKeyStatus('error');
-        setKeyFeedback('Cole sua API key Groq para validar.');
-        return;
-      }
-
-      await validateGroqKey(normalizedKey);
-      setActiveUserKey(normalizedKey);
-      setKeyInput('');
-      setKeyStatus('success');
-      setKeyFeedback('Chave validada com sucesso. As próximas otimizações usarão sua chave.');
-    } catch (err) {
-      setKeyStatus('error');
-      setKeyFeedback(err.message || 'Não foi possível validar a API key.');
-    }
-  }
-
-  function handleRemoveKey() {
-    setActiveUserKey('');
-    setKeyInput('');
-    setKeyStatus('idle');
-    setKeyFeedback('');
-  }
-
-  function maskKey(key) {
-    if (!key) return '';
-    const tail = key.slice(-4);
-    return `••••••••••••${tail}`;
   }
 
   return (
@@ -114,42 +75,33 @@ export default function Optimizer() {
       </section>
 
       {!USE_MOCK_DATA && (
-        <section className="panel byok-panel fade-in">
-          <div className="panel-header">
-            <div>
-              <h3>API key Groq do usuário (opcional)</h3>
-              <p className="panel-subtitle">
-                Sua chave fica só em memória desta aba e não é salva em banco, arquivo ou storage.
-              </p>
-            </div>
-            {activeUserKey && <span className="result-chip">Usando sua chave</span>}
+        <section className="provider-selector-panel fade-in">
+          <div className="provider-selector-header">
+            <h3>Provedor de Inteligência Artificial</h3>
+            <p>
+              Escolha qual provedor processará a otimização utilizando as credenciais seguras do servidor.
+            </p>
           </div>
-
-          <div className="byok-grid">
-            <input
-              type="password"
-              className="byok-input"
-              value={keyInput}
-              onChange={(event) => setKeyInput(event.target.value)}
-              placeholder={activeUserKey ? `Chave ativa: ${maskKey(activeUserKey)}` : 'Cole sua API key Groq'}
-              autoComplete="off"
-              spellCheck={false}
-            />
-
-            <div className="byok-actions">
-              <button type="button" className="primary-button" onClick={handleValidateKey} disabled={keyStatus === 'loading'}>
-                {keyStatus === 'loading' ? 'Validando...' : 'Validar e usar'}
-              </button>
-              {activeUserKey && (
-                <button type="button" className="ghost-button" onClick={handleRemoveKey}>
-                  Remover chave
-                </button>
-              )}
-            </div>
+          <div className="provider-toggle-group" role="radiogroup" aria-label="Seletor de Provedor de IA">
+            <button
+              type="button"
+              className={`provider-toggle-button ${provider === 'gemini' ? 'active' : ''}`}
+              onClick={() => setProvider('gemini')}
+              role="radio"
+              aria-checked={provider === 'gemini'}
+            >
+              Google Gemini
+            </button>
+            <button
+              type="button"
+              className={`provider-toggle-button ${provider === 'groq' ? 'active' : ''}`}
+              onClick={() => setProvider('groq')}
+              role="radio"
+              aria-checked={provider === 'groq'}
+            >
+              Groq (Llama)
+            </button>
           </div>
-
-          {keyStatus === 'error' && keyFeedback && <div className="error-box">{keyFeedback}</div>}
-          {keyStatus === 'success' && keyFeedback && <div className="success-box">{keyFeedback}</div>}
         </section>
       )}
 
