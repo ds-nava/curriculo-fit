@@ -35,7 +35,7 @@ flowchart TD
         Choice -->|groq| Groq[API Groq: Chamada Direta]
     end
     
-    Gemini & Groq -->|JSON Cru| Validate{Valida & Re-tenta}
+    Gemini & Groq -->|JSON Cru| Validate{Valida & Tenta Novamente}
     Validate -->|Parse OK| Response[Retorna JSON de Otimização]
     Validate -->|Erro de Parse| Repair[Reparo Automático via Prompt de Correção]
     Repair --> Response
