@@ -8,6 +8,6 @@
 export const USE_MOCK_DATA = false; // ← MUDE AQUI PARA ALTERNAR!
 
 export const getMockDelay = () => {
-  // Simula latência de rede (faz parecer mais realista)
+  // Simula latência de rede (para testar recursos visuais de carregamento)
   return new Promise(resolve => setTimeout(resolve, 1500));
 };
