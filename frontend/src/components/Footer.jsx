@@ -25,7 +25,7 @@ export default function Footer() {
         </p>
         <div className="flex items-center gap-3">
           <a
-            href="https://linkedin.com/in/"
+            href="https://www.linkedin.com/in/diegosouzanava/"
             target="_blank"
             rel="noopener noreferrer"
             className="nb-btn w-10 h-10 flex items-center justify-center bg-nb-surface dark:bg-neutral-800 dark:text-neutral-100"
@@ -34,7 +34,7 @@ export default function Footer() {
             <LinkedinIcon className="w-4 h-4" />
           </a>
           <a
-            href="https://github.com/"
+            href="https://github.com/ds-nava"
             target="_blank"
             rel="noopener noreferrer"
             className="nb-btn w-10 h-10 flex items-center justify-center bg-nb-surface dark:bg-neutral-800 dark:text-neutral-100"
