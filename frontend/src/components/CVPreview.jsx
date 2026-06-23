@@ -59,7 +59,7 @@ export default function CVPreview({ cvOtimizado }) {
         <span className="absolute top-3 right-3 text-[10px] font-bold bg-nb-bg dark:bg-neutral-700 text-nb-muted dark:text-neutral-400 px-2 py-0.5 border-2 border-nb-border dark:border-neutral-500 rounded-brutal z-10">
           Markdown
         </span>
-        <article className="cv-preview border-2 border-nb-border dark:border-neutral-500 rounded-brutal p-6 bg-white dark:bg-neutral-800 dark:text-neutral-100 max-h-[580px] overflow-auto font-mono text-sm leading-relaxed">
+        <article className="cv-preview cv-markdown border-2 border-nb-border dark:border-neutral-500 rounded-brutal p-8 md:p-10 bg-white dark:bg-neutral-800 dark:text-neutral-100 max-h-[650px] overflow-auto">
           <ReactMarkdown>{cvOtimizado || ''}</ReactMarkdown>
         </article>
       </div>

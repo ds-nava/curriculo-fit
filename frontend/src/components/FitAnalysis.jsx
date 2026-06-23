@@ -1,5 +1,20 @@
+import { useState, useEffect } from 'react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 import { CheckCircle2, AlertTriangle, Hash, XCircle, Info, Lightbulb, ClipboardList } from 'lucide-react';
+
+function useDarkMode() {
+  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  return dark;
+}
 
 function progressColor(score) {
   if (score < 50) return '#ef4444';
@@ -59,6 +74,20 @@ const subscoreExplanations = {
 };
 
 export default function FitAnalysis({ analise }) {
+  const isDark = useDarkMode();
+
+  const chartColors = {
+    grid: isDark ? '#525252' : '#000000',
+    label: isDark ? '#d4d4d4' : '#1a1a1a',
+    stroke: isDark ? '#d4d4d4' : '#000000',
+    fill: '#84a2ca',
+    dotStroke: isDark ? '#d4d4d4' : '#000000',
+    tooltipBg: isDark ? '#262626' : '#ffffff',
+    tooltipBorder: isDark ? '#525252' : '#000000',
+    tooltipText: isDark ? '#e5e5e5' : '#1a1a1a',
+    tooltipShadow: isDark ? '4px 4px 0px #404040' : '4px 4px 0px #000000',
+    legendText: isDark ? '#a3a3a3' : '#6b7280',
+  };
   const score = analise?.score_compatibilidade ?? 0;
   const subscores = analise?.subscores;
   const radarData = formatSubscoresToRadarData(subscores);
@@ -73,7 +102,7 @@ export default function FitAnalysis({ analise }) {
       </h3>
 
       {/* Score Bar */}
-      <div className="border-2 border-nb-border dark:border-neutral-500 rounded-brutal p-5 bg-nb-bg dark:bg-neutral-800">
+      <div className="border-2 border-nb-border dark:border-neutral-500 rounded-brutal shadow-brutal p-5 bg-nb-surface dark:bg-neutral-800">
         <div className="flex justify-between items-end mb-3">
           <div>
             <span className="text-sm font-bold text-nb-muted dark:text-neutral-400 uppercase tracking-wider">
@@ -104,31 +133,35 @@ export default function FitAnalysis({ analise }) {
           </h4>
           <ResponsiveContainer width="100%" height={300}>
             <RadarChart data={radarData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
-              <PolarGrid stroke="#d1d5db" />
-              <PolarAngleAxis dataKey="categoria" tick={{ fontSize: 13, fontWeight: 600, fill: '#6b7280' }} />
+              <PolarGrid stroke={chartColors.grid} strokeWidth={1.5} strokeDasharray="" />
+              <PolarAngleAxis dataKey="categoria" tick={{ fontSize: 13, fontWeight: 700, fill: chartColors.label }} />
               <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} />
               <Radar
                 name="Pontuação (%)"
                 dataKey="valor"
-                stroke="#84a2ca"
-                fill="#84a2ca"
-                fillOpacity={0.3}
+                stroke={chartColors.stroke}
+                strokeWidth={2.5}
+                fill={chartColors.fill}
+                fillOpacity={0.8}
+                dot={{ r: 5, fill: chartColors.fill, stroke: chartColors.dotStroke, strokeWidth: 2 }}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#ffffff',
-                  border: '2px solid #000000',
+                  backgroundColor: chartColors.tooltipBg,
+                  border: `2px solid ${chartColors.tooltipBorder}`,
                   borderRadius: '6px',
-                  boxShadow: '4px 4px 0px #000000',
+                  boxShadow: chartColors.tooltipShadow,
                   fontWeight: 600,
+                  color: chartColors.tooltipText,
                 }}
                 formatter={(value, name, props) => {
                   const item = props.payload;
                   return [`${value.toFixed(1)}% (${item.valor_bruto}/${item.max_valor})`, name];
                 }}
-                labelStyle={{ color: '#1a1a1a', fontWeight: 700, fontSize: '0.9rem' }}
+                labelStyle={{ color: chartColors.tooltipText, fontWeight: 700, fontSize: '0.9rem' }}
+                itemStyle={{ color: chartColors.tooltipText }}
               />
-              <Legend />
+              <Legend wrapperStyle={{ color: chartColors.legendText }} />
             </RadarChart>
           </ResponsiveContainer>
 
@@ -174,7 +207,7 @@ export default function FitAnalysis({ analise }) {
       {/* Analysis Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Pontos Fortes */}
-        <div className="nb-card p-5 border-l-4 border-l-nb-success animate-fade-up stagger-1">
+        <div className="bg-green-50 dark:bg-green-950/20 border-2 border-nb-border dark:border-neutral-500 rounded-brutal shadow-brutal p-5 border-l-4 border-l-nb-success animate-fade-up stagger-1">
           <h4 className="flex items-center gap-2 text-sm font-extrabold text-nb-ink dark:text-neutral-100 mb-3 m-0">
             <CheckCircle2 className="w-5 h-5 text-nb-success" />
             Pontos Fortes
@@ -190,7 +223,7 @@ export default function FitAnalysis({ analise }) {
         </div>
 
         {/* Gaps Críticos */}
-        <div className="nb-card p-5 border-l-4 border-l-nb-danger animate-fade-up stagger-2">
+        <div className="bg-red-50 dark:bg-red-950/20 border-2 border-nb-border dark:border-neutral-500 rounded-brutal shadow-brutal p-5 border-l-4 border-l-nb-danger animate-fade-up stagger-2">
           <h4 className="flex items-center gap-2 text-sm font-extrabold text-nb-ink dark:text-neutral-100 mb-3 m-0">
             <AlertTriangle className="w-5 h-5 text-nb-danger" />
             Gaps Críticos
@@ -206,7 +239,7 @@ export default function FitAnalysis({ analise }) {
         </div>
 
         {/* Keywords Presentes */}
-        <div className="nb-card p-5 border-l-4 border-l-green-400 animate-fade-up stagger-3">
+        <div className="bg-green-50 dark:bg-green-950/20 border-2 border-nb-border dark:border-neutral-500 rounded-brutal shadow-brutal p-5 border-l-4 border-l-green-400 animate-fade-up stagger-3">
           <h4 className="flex items-center gap-2 text-sm font-extrabold text-nb-ink dark:text-neutral-100 mb-3 m-0">
             <Hash className="w-5 h-5 text-green-500" />
             Keywords Presentes
@@ -224,7 +257,7 @@ export default function FitAnalysis({ analise }) {
         </div>
 
         {/* Keywords Ausentes */}
-        <div className="nb-card p-5 border-l-4 border-l-red-400 animate-fade-up stagger-4">
+        <div className="bg-red-50 dark:bg-red-950/20 border-2 border-nb-border dark:border-neutral-500 rounded-brutal shadow-brutal p-5 border-l-4 border-l-red-400 animate-fade-up stagger-4">
           <h4 className="flex items-center gap-2 text-sm font-extrabold text-nb-ink dark:text-neutral-100 mb-3 m-0">
             <XCircle className="w-5 h-5 text-red-500" />
             Keywords Ausentes
