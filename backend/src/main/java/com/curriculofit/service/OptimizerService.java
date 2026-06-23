@@ -345,6 +345,7 @@ public class OptimizerService {
 
     private RuntimeException mapGeminiError(WebClientResponseException ex) {
         int statusCode = ex.getStatusCode().value();
+                log.error("Erro retornado pelo Gemini: Status={}, Corpo={}", statusCode, ex.getResponseBodyAsString());
         if (statusCode == 400) {
             return new IllegalArgumentException("Parâmetros inválidos ou modelo não suportado no Gemini. Verifique a configuração.");
         }
