@@ -1,30 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100" height="100">
-  <!-- Documento com bordas arredondadas -->
-  <rect x="50" y="50" width="300" height="380" rx="25" fill="white" stroke="black" stroke-width="32"/>
-  
-  <!-- Canto superior direito (dobra) -->
-  <polygon points="350,50 350,150 450,150" fill="black"/>
-  
-  <!-- Avatar/Cabeça -->
-  <circle cx="160" cy="140" r="55" fill="none" stroke="black" stroke-width="24"/>
-  
-  <!-- Avatar/Corpo -->
-  <path d="M 105 230 Q 105 185 160 185 Q 215 185 215 230" fill="black"/>
-  
-  <!-- Linhas de texto -->
-  <rect x="80" y="280" width="220" height="18" rx="9" fill="black"/>
-  <rect x="80" y="330" width="220" height="18" rx="9" fill="black"/>
-  <rect x="80" y="380" width="160" height="18" rx="9" fill="black"/>
-  
-  <!-- Caneta/Lápis editando -->
-  <g transform="translate(320, 280) rotate(-35)">
-    <!-- Corpo da caneta -->
-    <rect x="-18" y="-140" width="36" height="220" rx="10" fill="black"/>
-    <!-- Ponta do lápis -->
-    <polygon points="0,-140 -18,-110 18,-110" fill="black"/>
-    <!-- Banda branca da caneta -->
-    <rect x="-14" y="-30" width="28" height="80" fill="white" stroke="black" stroke-width="4" rx="4"/>
-    <!-- Borracha (rosa/vermelho) -->
-    <rect x="-14" y="50" width="28" height="35" fill="#FF6B6B" rx="4"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Document body -->
+  <path d="M6 4h14l6 6v18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="#ffffff" stroke="#000000" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Folded corner -->
+  <path d="M20 4v6h6" fill="#dee8f3" stroke="#000000" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Sparkle star -->
+  <path d="M15 15l1.2-3.5L17.4 15l3.5 1.2-3.5 1.2L16.2 21l-1.2-3.5L11.5 16.2z" fill="#84a2ca" stroke="#000000" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Text lines -->
+  <line x1="8" y1="21" x2="14" y2="21" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+  <line x1="8" y1="25" x2="18" y2="25" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
 </svg>

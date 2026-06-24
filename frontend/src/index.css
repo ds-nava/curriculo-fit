@@ -98,7 +98,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  border-bottom: 2px solid #84a2ca;
+  border-bottom: 2px solid #d1d5db;
   padding-bottom: 0.3rem;
   margin: 1.5rem 0 0.75rem 0;
   color: #1a1a1a;
@@ -106,7 +106,7 @@
 
 .dark .cv-markdown h2 {
   color: #e5e5e5;
-  border-bottom-color: #84a2ca;
+  border-bottom-color: #525252;
 }
 
 .cv-markdown h3 {
@@ -153,9 +153,13 @@
   content: '▸';
   position: absolute;
   left: 0;
-  color: #84a2ca;
+  color: #374151;
   font-weight: 700;
   font-size: 0.85rem;
+}
+
+.dark .cv-markdown ul li::before {
+  color: #a3a3a3;
 }
 
 .cv-markdown ol {
@@ -181,8 +185,8 @@
 .cv-markdown code {
   font-family: 'JetBrains Mono', 'Consolas', monospace;
   font-size: 0.8rem;
-  background: #dee8f3;
-  border: 1.5px solid #000000;
+  background: #f3f4f6;
+  border: 1.5px solid #d1d5db;
   border-radius: 4px;
   padding: 0.1rem 0.35rem;
   font-weight: 500;
@@ -196,8 +200,8 @@
 
 /* Blockquotes */
 .cv-markdown blockquote {
-  border-left: 4px solid #84a2ca;
-  background: #f0f4f9;
+  border-left: 4px solid #9ca3af;
+  background: #f9fafb;
   padding: 0.6rem 1rem;
   margin: 0.75rem 0;
   border-radius: 0 6px 6px 0;
@@ -206,31 +210,40 @@
 }
 
 .dark .cv-markdown blockquote {
-  background: #1e293b;
+  background: #262626;
+  border-left-color: #525252;
   color: #d4d4d4;
 }
 
 /* Horizontal rules */
 .cv-markdown hr {
   border: none;
-  border-top: 2px dashed #d1d5db;
+  border-top: 1px solid #d1d5db;
   margin: 1.25rem 0;
 }
 
 .dark .cv-markdown hr {
-  border-top-color: #525252;
+  border-top-color: #404040;
 }
 
 /* Links */
 .cv-markdown a {
-  color: #84a2ca;
+  color: #1a1a1a;
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
+.dark .cv-markdown a {
+  color: #e5e5e5;
+}
+
 .cv-markdown a:hover {
-  color: #5c7fa3;
+  color: #4b5563;
+}
+
+.dark .cv-markdown a:hover {
+  color: #d4d4d4;
 }
 
 /* Tables */
@@ -249,7 +262,7 @@
 }
 
 .cv-markdown th {
-  background: #84a2ca;
+  background: #374151;
   color: #ffffff;
   font-weight: 700;
   text-transform: uppercase;
